@@ -9,6 +9,18 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
         this.tipShown = false;
         this.completed = false;
 
+        // Create keys once for reuse in update
+        this.keys = this.input.keyboard.addKeys({
+            up: 'UP',
+            down: 'DOWN',
+            left: 'LEFT',
+            right: 'RIGHT',
+            w: 'W',
+            s: 'S',
+            a: 'A',
+            d: 'D'
+        });
+
         this.cameras.main.setBackgroundColor('#0a0f1f');
 
         const centerX = this.sys.game.config.width / 2;
@@ -190,6 +202,8 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
                                     repeat: 4,
                                     onComplete: () => {
                                         binText.destroy();
+                                        const index = this.particles.indexOf(signal);
+                                        if (index > -1) this.particles.splice(index, 1);
                                         signal.destroy();
 
                                         // === Big floating letter appears on monitor ===
@@ -224,10 +238,10 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
 
     update() {
         const speed = 6;
-        if (this.input.keyboard.addKey('W').isDown || this.input.keyboard.addKey('UP').isDown) this.hero.y -= speed;
-        if (this.input.keyboard.addKey('S').isDown || this.input.keyboard.addKey('DOWN').isDown) this.hero.y += speed;
-        if (this.input.keyboard.addKey('A').isDown || this.input.keyboard.addKey('LEFT').isDown) this.hero.x -= speed;
-        if (this.input.keyboard.addKey('D').isDown || this.input.keyboard.addKey('RIGHT').isDown) this.hero.x += speed;
+        if (this.keys.w.isDown || this.keys.up.isDown) this.hero.y -= speed;
+        if (this.keys.s.isDown || this.keys.down.isDown) this.hero.y += speed;
+        if (this.keys.a.isDown || this.keys.left.isDown) this.hero.x -= speed;
+        if (this.keys.d.isDown || this.keys.right.isDown) this.hero.x += speed;
 
         const w = this.sys.game.config.width;
         const h = this.sys.game.config.height;
@@ -270,5 +284,12 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
 
             this.input.keyboard.once('keydown-FOUR', () => this.scene.start('Level_04_1_BinaryThroughLogicGates'));
         }
+    }
+
+    shutdown() {
+        this.input.keyboard.removeAllListeners();
+        this.particles.forEach(p => p.destroy());
+        this.particles = [];
+        this.tweens.killAll();
     }
 }

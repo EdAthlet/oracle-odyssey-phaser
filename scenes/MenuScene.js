@@ -24,6 +24,7 @@ class MenuScene extends Phaser.Scene {
         this.createLevelButton(80, startY + 1*lineHeight, '2', 'Level 02 - Improved Keyboard & Monitor', 'Level_02_ImprovedKeyboard');
         this.createLevelButton(80, startY + 2*lineHeight, '3', 'Level 03 - Key Press → Electric Signal → Binary → Character', 'Level_03_KeyPressToBinary');
         this.createLevelButton(80, startY + 3*lineHeight, '4', 'Level 04 - Full PC Boot: HD → RAM → OS', 'Level_04_PC_Boot');
+        this.createLevelButton(80, startY + 4*lineHeight, '5', 'Level 04.1 - Binary Through Logic Gates', 'Level_04_1_BinaryThroughLogicGates');
 
         // Instructions at bottom
         this.add.text(80, 720, 'Click on a level or press the number key to start', { 
@@ -59,5 +60,9 @@ class MenuScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-' + number, () => {
             this.scene.start(sceneKey);
         });
+    }
+
+    shutdown() {
+        this.input.keyboard.removeAllListeners();
     }
 }

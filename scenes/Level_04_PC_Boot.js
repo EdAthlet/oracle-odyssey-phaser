@@ -183,7 +183,14 @@ class Level_04_PC_Boot extends Phaser.Scene {
                 fontSize: '18px', color: '#ffee88'
             }).setOrigin(0.5);
 
-            this.input.keyboard.once('keydown-FIVE', () => this.scene.start('Level_05'));
+            this.input.keyboard.once('keydown-FIVE', () => this.scene.start('Level_04_1_BinaryThroughLogicGates'));
         });
+    }
+
+    shutdown() {
+        this.movingObjects.forEach(obj => obj && obj.destroy());
+        this.movingObjects = [];
+        this.tweens.killAll();
+        this.time.removeAllEvents();
     }
 }

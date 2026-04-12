@@ -9,6 +9,18 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
         this.tipShown = false;
         this.completed = false;
 
+        // Create keys once for reuse in update
+        this.keys = this.input.keyboard.addKeys({
+            up: 'UP',
+            down: 'DOWN',
+            left: 'LEFT',
+            right: 'RIGHT',
+            w: 'W',
+            s: 'S',
+            a: 'A',
+            d: 'D'
+        });
+
         // === KEYBOARD ===
         this.add.rectangle(250, 520, 260, 140, 0x23334a).setStrokeStyle(4, 0x00ccff);
         for (let i = 0; i < 4; i++) {
@@ -112,6 +124,8 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
                                     onComplete: () => letter.destroy()
                                 });
 
+                                const index = this.particles.indexOf(particle);
+                                if (index > -1) this.particles.splice(index, 1);
                                 particle.destroy();
                             }
                         });
@@ -124,10 +138,10 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
     update() {
         // Hero movement
         const speed = 6;
-        if (this.input.keyboard.addKey('W').isDown || this.input.keyboard.addKey('UP').isDown) this.hero.y -= speed;
-        if (this.input.keyboard.addKey('S').isDown || this.input.keyboard.addKey('DOWN').isDown) this.hero.y += speed;
-        if (this.input.keyboard.addKey('A').isDown || this.input.keyboard.addKey('LEFT').isDown) this.hero.x -= speed;
-        if (this.input.keyboard.addKey('D').isDown || this.input.keyboard.addKey('RIGHT').isDown) this.hero.x += speed;
+        if (this.keys.w.isDown || this.keys.up.isDown) this.hero.y -= speed;
+        if (this.keys.s.isDown || this.keys.down.isDown) this.hero.y += speed;
+        if (this.keys.a.isDown || this.keys.left.isDown) this.hero.x -= speed;
+        if (this.keys.d.isDown || this.keys.right.isDown) this.hero.x += speed;
 
         // === HERO WRAPPING (reappears from opposite side) ===
         const width = this.sys.game.config.width;
@@ -160,5 +174,12 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    shutdown() {
+        this.input.keyboard.removeAllListeners();
+        this.particles.forEach(p => p.destroy());
+        this.particles = [];
+        this.tweens.killAll();
     }
 }

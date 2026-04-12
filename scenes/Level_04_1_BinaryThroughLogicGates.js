@@ -11,6 +11,18 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
         this.tipShown = false;
         this.completed = false;
 
+        // Create keys once for reuse in update
+        this.keys = this.input.keyboard.addKeys({
+            up: 'UP',
+            down: 'DOWN',
+            left: 'LEFT',
+            right: 'RIGHT',
+            w: 'W',
+            s: 'S',
+            a: 'A',
+            d: 'D'
+        });
+
         this.outputBits = '';
         this.currentBits = '';
 
@@ -127,11 +139,13 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
 
     computeResult(op, bits) {
         const a = bits[0] === '1' ? 1 : 0;
-        const b = bits[1] === '1' ? 1 : 0;
 
+        if (op === 'NOT') return String(a ? 0 : 1);
+
+        const b = bits[1] === '1' ? 1 : 0;
         if (op === 'AND') return String(a & b);
         if (op === 'OR') return String(a | b);
-        return String(a ? 0 : 1);
+        return '0';
     }
 
     tryRouteCurrentBits() {
@@ -210,10 +224,10 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
 
     update() {
         const speed = 6;
-        if (this.input.keyboard.addKey('W').isDown || this.input.keyboard.addKey('UP').isDown) this.hero.y -= speed;
-        if (this.input.keyboard.addKey('S').isDown || this.input.keyboard.addKey('DOWN').isDown) this.hero.y += speed;
-        if (this.input.keyboard.addKey('A').isDown || this.input.keyboard.addKey('LEFT').isDown) this.hero.x -= speed;
-        if (this.input.keyboard.addKey('D').isDown || this.input.keyboard.addKey('RIGHT').isDown) this.hero.x += speed;
+        if (this.keys.w.isDown || this.keys.up.isDown) this.hero.y -= speed;
+        if (this.keys.s.isDown || this.keys.down.isDown) this.hero.y += speed;
+        if (this.keys.a.isDown || this.keys.left.isDown) this.hero.x -= speed;
+        if (this.keys.d.isDown || this.keys.right.isDown) this.hero.x += speed;
 
         const w = this.sys.game.config.width;
         const h = this.sys.game.config.height;
@@ -229,5 +243,10 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
                 color: '#ffff88'
             });
         }
+    }
+
+    shutdown() {
+        this.input.keyboard.removeAllListeners();
+        this.tweens.killAll();
     }
 }

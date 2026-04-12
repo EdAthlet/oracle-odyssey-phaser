@@ -8,6 +8,18 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
         this.startTime = this.time.now;
         this.tipShown = false;
 
+        // Create keys once for reuse in update
+        this.keys = this.input.keyboard.addKeys({
+            up: 'UP',
+            down: 'DOWN',
+            left: 'LEFT',
+            right: 'RIGHT',
+            w: 'W',
+            s: 'S',
+            a: 'A',
+            d: 'D'
+        });
+
         // Boxes
         this.add.rectangle(250, 520, 260, 140, 0x23334a).setStrokeStyle(4, 0x00ccff);
         this.add.text(250, 580, 'KEYBOARD (Input)', { fontSize: '22px', color: '#ffffff' }).setOrigin(0.5);
@@ -95,6 +107,8 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
                                     onComplete: () => letter.destroy()
                                 });
 
+                                const index = this.particles.indexOf(particle);
+                                if (index > -1) this.particles.splice(index, 1);
                                 particle.destroy();
                             }
                         });
@@ -107,10 +121,10 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
     update() {
         // Hero movement
         const speed = 6;
-        if (this.input.keyboard.addKey('W').isDown || this.input.keyboard.addKey('UP').isDown) this.hero.y -= speed;
-        if (this.input.keyboard.addKey('S').isDown || this.input.keyboard.addKey('DOWN').isDown) this.hero.y += speed;
-        if (this.input.keyboard.addKey('A').isDown || this.input.keyboard.addKey('LEFT').isDown) this.hero.x -= speed;
-        if (this.input.keyboard.addKey('D').isDown || this.input.keyboard.addKey('RIGHT').isDown) this.hero.x += speed;
+        if (this.keys.w.isDown || this.keys.up.isDown) this.hero.y -= speed;
+        if (this.keys.s.isDown || this.keys.down.isDown) this.hero.y += speed;
+        if (this.keys.a.isDown || this.keys.left.isDown) this.hero.x -= speed;
+        if (this.keys.d.isDown || this.keys.right.isDown) this.hero.x += speed;
 
         // Tip after 20 seconds
         if (!this.tipShown && (this.time.now - this.startTime) / 1000 > 20) {
@@ -127,5 +141,12 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
                 this.scene.start('Level_02_ImprovedKeyboard');
             });
         }
+    }
+
+    shutdown() {
+        this.input.keyboard.removeAllListeners();
+        this.particles.forEach(p => p.destroy());
+        this.particles = [];
+        this.tweens.killAll();
     }
 }
