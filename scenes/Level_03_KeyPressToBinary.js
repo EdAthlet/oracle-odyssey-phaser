@@ -268,7 +268,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
                 align: 'left'
             });
 
-            this.input.keyboard.once('keydown-FOUR', () => this.scene.start('Level_04'));
+            this.input.keyboard.once('keydown-FOUR', () => this.scene.start('Level_04_1_BinaryThroughLogicGates'));
         }
     }
 }
