@@ -156,7 +156,7 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
             this.input.keyboard.once('keydown-ENTER', () => {
                 const nearKeyboard = this.hero.x > 100 && this.hero.x < 400 && this.hero.y > 400 && this.hero.y < 600;
                 if (nearKeyboard) {
-                    this.scene.start('Level_03');
+                    this.scene.start('Level_03_KeyPressToBinary');
                 }
             });
         }
