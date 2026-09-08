@@ -50,7 +50,10 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
 
         // Input
         this.input.keyboard.on('keydown', (e) => {
-            if (e.key === 'Escape') this.scene.start('MenuScene');
+            if (e.key === 'Escape') {
+                if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
+                this.scene.start('MenuScene');
+            }
 
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Shift'].includes(e.key)) {
                 return;

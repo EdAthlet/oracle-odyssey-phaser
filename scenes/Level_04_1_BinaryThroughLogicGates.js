@@ -90,6 +90,7 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
 
         this.input.keyboard.on('keydown', (e) => {
             if (e.key === 'Escape') {
+                if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
                 this.scene.start('MenuScene');
                 return;
             }
@@ -100,7 +101,13 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
             }
 
             if (this.completed) {
+                if (e.key === '6') {
+                    if (window.odysseyGoInstance && window.odysseyGoInstance()) return;
+                    this.scene.start('Level_06_TheInstance');
+                    return;
+                }
                 if (e.key === '5' || e.key === 'm' || e.key === 'M') {
+                    if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
                     this.scene.start('MenuScene');
                 }
                 return;
@@ -202,7 +209,7 @@ class Level_04_1_BinaryThroughLogicGates extends Phaser.Scene {
         if (this.challengeIndex >= this.challenges.length) {
             this.completed = true;
             this.challengeText.setText('✓ Level 04.1 Complete');
-            this.statusText.setText('Output reached 01001111. Press 5 or M for Menu.');
+            this.statusText.setText('Output reached 01001111. Press 6 for Level 06, or M for Menu.');
             return;
         }
 
