@@ -5,11 +5,14 @@ class Level_04_PC_Boot extends Phaser.Scene {
 
   create() {
     this.powerOn = false;
-    this.booting = false;
     this.completed = false;
     this.stageIndex = -1;
+    this.phase = "idle";
+    this.autoPlay = false;
     this.packets = [];
     this.completeLabel = null;
+    this.MOVE_MS = 1400;
+    this.AUTO_PAUSE_MS = 2600;
 
     this.C = {
       bg: 0x07080c,
@@ -21,14 +24,54 @@ class Level_04_PC_Boot extends Phaser.Scene {
     };
 
     this.STAGES = [
-      { id: "rails", title: "Power rails", note: "PSU raises 12 V / 5 V / 3.3 V." },
-      { id: "reset", title: "Reset", note: "CPU is held, then released." },
-      { id: "firmware", title: "Firmware", note: "First fetches come from flash ROM, not disk." },
-      { id: "post", title: "POST", note: "Firmware tests RAM before it trusts it." },
-      { id: "disk", title: "Boot device", note: "Firmware picks a disk." },
-      { id: "loader", title: "Bootloader", note: "A tiny program from the first sector." },
-      { id: "kernel", title: "Kernel", note: "OS core is copied into RAM." },
-      { id: "run", title: "Running", note: "CPU now fetches from RAM. Display on." },
+      {
+        id: "rails",
+        title: "1  Power rails",
+        explain:
+          "The power supply is the adapter. It turns wall electricity into the small voltages chips can use (12 V, 5 V, 3.3 V). Until those rails are up, nothing on the board can work.",
+      },
+      {
+        id: "reset",
+        title: "2  Reset",
+        explain:
+          "The CPU is the brain. We hold it still (reset) so it does not wake up in the middle of an old thought. Then we let go, and it looks for its very first instruction.",
+      },
+      {
+        id: "firmware",
+        title: "3  Firmware",
+        explain:
+          "That first instruction is not on the disk. It lives in a small flash chip that keeps its memory when the computer is off — firmware (BIOS or UEFI). Think of a start-up booklet glued inside the machine.",
+      },
+      {
+        id: "post",
+        title: "4  POST — test the memory",
+        explain:
+          "RAM is the desk: fast, but it forgets when power dies. Firmware writes and reads it first (Power-On Self Test). If the desk is broken, we refuse to boot.",
+      },
+      {
+        id: "disk",
+        title: "5  Find the boot disk",
+        explain:
+          "The disk is the cupboard. It is slower than RAM, but it remembers with the power off. Firmware now asks: which cupboard has a program that can start the computer?",
+      },
+      {
+        id: "loader",
+        title: "6  Bootloader",
+        explain:
+          "The first tiny program on that disk is the bootloader. It is only smart enough to find the real operating system and copy it onto the desk.",
+      },
+      {
+        id: "kernel",
+        title: "7  Kernel into RAM",
+        explain:
+          "The kernel is the core of the operating system. We copy it from the cupboard (disk) onto the desk (RAM) so the CPU can work with it quickly. A shell/desktop can follow.",
+      },
+      {
+        id: "run",
+        title: "8  The computer is running",
+        explain:
+          "The CPU now reads instructions from RAM, not from firmware. The screen lights up. This is 'booting': the machine has pulled itself up and is ready for programs.",
+      },
     ];
 
     this.cameras.main.setBackgroundColor(this.C.bg);
@@ -41,14 +84,14 @@ class Level_04_PC_Boot extends Phaser.Scene {
       right: "RIGHT",
     });
 
-    this.board = { x: 620, y: 400, w: 720, h: 460 };
-    this.psu = { x: 360, y: 560 };
-    this.cpu = { x: 560, y: 250 };
-    this.rom = { x: 720, y: 230 };
-    this.ram = { x: 880, y: 280 };
-    this.disk = { x: 560, y: 520 };
-    this.display = { x: 900, y: 520 };
-    this.sw = { x: 330, y: 250 };
+    this.board = { x: 620, y: 410, w: 720, h: 430 };
+    this.psu = { x: 360, y: 570 };
+    this.cpu = { x: 560, y: 270 };
+    this.rom = { x: 720, y: 250 };
+    this.ram = { x: 880, y: 300 };
+    this.disk = { x: 560, y: 530 };
+    this.display = { x: 900, y: 530 };
+    this.sw = { x: 330, y: 270 };
 
     this.drawBoard();
     this.drawParts();
@@ -57,6 +100,7 @@ class Level_04_PC_Boot extends Phaser.Scene {
     this.drawHud();
     this.drawChecklist();
     this.drawHero();
+    this.setExplain("Flip power (P, or click the switch). Then N for one step, or A to watch the whole boot.");
 
     this.input.keyboard.on("keydown", (e) => this.onKey(e));
   }
@@ -107,7 +151,7 @@ class Level_04_PC_Boot extends Phaser.Scene {
     g.moveTo(this.ram.x, this.ram.y + 70);
     g.lineTo(this.display.x - 20, this.display.y - 70);
     g.strokePath();
-    this.add.text(280, 160, "MOTHERBOARD", this.mono(11, "#5c6170"));
+    this.add.text(280, 178, "MOTHERBOARD", this.mono(11, "#5c6170"));
   }
 
   drawParts() {
@@ -138,7 +182,7 @@ class Level_04_PC_Boot extends Phaser.Scene {
     this.knob = this.add.rectangle(this.sw.x, this.sw.y + 14, 48, 22, 0x5c3a3a).setStrokeStyle(1, 0xc45c5c);
     this.knob.setInteractive({ useHandCursor: true });
     this.knob.on("pointerdown", () => this.togglePower());
-    this.swHint = this.add.text(this.sw.x, this.sw.y + 38, "Space", this.mono(10, "#5c6170")).setOrigin(0.5);
+    this.swHint = this.add.text(this.sw.x, this.sw.y + 38, "P", this.mono(10, "#5c6170")).setOrigin(0.5);
   }
 
   drawDisplay() {
@@ -148,29 +192,31 @@ class Level_04_PC_Boot extends Phaser.Scene {
   }
 
   drawHud() {
-    this.add.rectangle(550, 44, 1100, 88, 0x07080c, 0.92);
-    this.add.text(36, 16, "LEVEL 04", this.mono(11, "#4a9a94"));
-    this.add.text(36, 36, "Schematic boot", {
+    this.add.rectangle(550, 52, 1100, 104, 0x07080c, 0.94);
+    this.add.text(36, 12, "LEVEL 04", this.mono(11, "#4a9a94"));
+    this.add.text(36, 30, "Schematic boot", {
       fontFamily: "Newsreader, Times New Roman, serif",
-      fontSize: "24px",
+      fontSize: "22px",
       color: "#eceef2",
     });
-    this.objective = this.add.text(
-      36,
-      68,
-      "Flip the power switch. Follow rails → firmware → disk → RAM.",
-      this.font(14, "#8a8f9c"),
-    );
-    this.add.text(1064, 22, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0);
-    this.add.text(1064, 44, "Arrows walk", this.mono(12, "#5c6170")).setOrigin(1, 0);
+    this.explain = this.add.text(36, 58, "", {
+      fontFamily: "IBM Plex Sans, Segoe UI, sans-serif",
+      fontSize: "14px",
+      color: "#8a8f9c",
+      wordWrap: { width: 820 },
+      lineSpacing: 3,
+    });
+    this.prompt = this.add.text(36, 98, "P power   ·   N / Enter / Space  next step   ·   A  play all", this.mono(12, "#5c6170"));
+    this.add.text(1064, 16, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0);
+    this.add.text(1064, 36, "Arrows walk", this.mono(12, "#5c6170")).setOrigin(1, 0);
   }
 
   drawChecklist() {
     this.checks = [];
     this.STAGES.forEach((stage, i) => {
-      const y = 118 + i * 22;
-      const mark = this.add.text(36, y, "○", this.mono(12, "#5c6170"));
-      const lab = this.add.text(56, y, i + 1 + "  " + stage.title, this.mono(12, "#5c6170"));
+      const y = 128 + i * 20;
+      const mark = this.add.text(36, y, "○", this.mono(11, "#5c6170"));
+      const lab = this.add.text(56, y, stage.title, this.mono(11, "#5c6170"));
       this.checks.push({ mark, lab });
     });
   }
@@ -179,12 +225,22 @@ class Level_04_PC_Boot extends Phaser.Scene {
     const body = this.add.circle(0, 6, 16, 0x4a9a94);
     const visor = this.add.rectangle(0, -10, 22, 8, 0xc4a574);
     const tag = this.add.text(0, 6, "YOU", this.mono(9, "#07080c")).setOrigin(0.5);
-    this.hero = this.add.container(200, 250, [body, visor, tag]);
+    this.hero = this.add.container(200, 270, [body, visor, tag]);
+  }
+
+  setExplain(text, tone) {
+    const colors = { mute: "#8a8f9c", teach: "#eceef2", wait: "#c4a574", ok: "#8fd4a8" };
+    this.explain.setColor(colors[tone] || colors.teach);
+    this.explain.setText(text);
+  }
+
+  setPrompt(text) {
+    this.prompt.setText(text);
   }
 
   pulse(rect) {
     rect.setFillStyle(0x4a9a94, 0.22);
-    this.tweens.add({ targets: rect, fillAlpha: 0, duration: 320, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: rect, fillAlpha: 0, duration: 420, ease: "Sine.easeOut" });
   }
 
   nearSwitch() {
@@ -197,14 +253,41 @@ class Level_04_PC_Boot extends Phaser.Scene {
       this.scene.start("MenuScene");
       return;
     }
-    if (e.key === " " || e.code === "Space") {
-      e.preventDefault?.();
+    if (e.key === "p" || e.key === "P") {
       this.togglePower();
       return;
     }
     if (this.completed && (e.key === "5" || e.code === "Digit5")) {
       this.scene.start("Level_04_1_BinaryThroughLogicGates");
+      return;
     }
+    if (e.key === "a" || e.key === "A") {
+      this.startAuto();
+      return;
+    }
+    const next = e.key === "n" || e.key === "N" || e.key === "Enter" || e.key === " " || e.code === "Space";
+    if (next) {
+      e.preventDefault?.();
+      if (!this.powerOn) {
+        this.togglePower();
+        return;
+      }
+      this.requestNext();
+    }
+  }
+
+  startAuto() {
+    if (this.completed) return;
+    if (!this.powerOn) this.togglePower();
+    this.autoPlay = true;
+    this.setPrompt("Playing all steps  ·  P to stop");
+    if (this.phase === "idle" || this.phase === "waiting") this.requestNext();
+  }
+
+  requestNext() {
+    if (!this.powerOn || this.completed) return;
+    if (this.phase === "moving") return;
+    this.playStage();
   }
 
   togglePower() {
@@ -214,15 +297,21 @@ class Level_04_PC_Boot extends Phaser.Scene {
       return;
     }
     this.powerOn = true;
+    this.autoPlay = false;
     this.knob.setFillStyle(0x2d5e5a);
     this.knob.setStrokeStyle(1, 0x4a9a94);
-    this.booting = true;
+    this.phase = "waiting";
     this.stageIndex = -1;
-    this.nextStage();
+    this.setExplain(
+      "Power is on, but the computer has not started thinking yet. Press N for the first step. Press A to play the whole boot without stopping.",
+      "wait",
+    );
+    this.setPrompt("N / Enter / Space  next step   ·   A  play all   ·   P  power off");
   }
 
   resetBoard() {
-    this.booting = false;
+    this.phase = "idle";
+    this.autoPlay = false;
     this.completed = false;
     this.stageIndex = -1;
     this.knob.setFillStyle(0x5c3a3a);
@@ -247,8 +336,8 @@ class Level_04_PC_Boot extends Phaser.Scene {
     }
     this.tweens.killAll();
     this.time.removeAllEvents();
-    this.objective.setColor("#8a8f9c");
-    this.objective.setText("Flip the power switch. Follow rails → firmware → disk → RAM.");
+    this.setExplain("Flip power (P, or click the switch). Then N for one step, or A to watch the whole boot.", "mute");
+    this.setPrompt("P power   ·   N / Enter / Space  next step   ·   A  play all");
   }
 
   markStage(i) {
@@ -259,96 +348,128 @@ class Level_04_PC_Boot extends Phaser.Scene {
       } else if (n === i) {
         c.mark.setText("●").setColor("#7dfff0");
         c.lab.setColor("#eceef2");
+      } else {
+        c.mark.setText("○").setColor("#5c6170");
+        c.lab.setColor("#5c6170");
       }
     });
   }
 
   send(label, from, to, color, done) {
     const wrap = this.add.container(from.x, from.y);
-    const body = this.add.rectangle(0, 0, Math.max(48, label.length * 8 + 16), 20, color);
-    const text = this.add.text(0, 0, label, this.mono(10, "#07080c")).setOrigin(0.5);
+    const body = this.add.rectangle(0, 0, Math.max(52, label.length * 8 + 18), 22, color);
+    const text = this.add.text(0, 0, label, this.mono(11, "#07080c")).setOrigin(0.5);
     wrap.add([body, text]);
     this.packets.push(wrap);
     this.tweens.add({
       targets: wrap,
       x: to.x,
       y: to.y,
-      duration: 520,
-      ease: "Cubic.easeInOut",
+      duration: this.MOVE_MS,
+      ease: "Sine.easeInOut",
       onComplete: () => {
-        wrap.destroy();
-        const i = this.packets.indexOf(wrap);
-        if (i > -1) this.packets.splice(i, 1);
-        if (done) done();
+        this.time.delayedCall(400, () => {
+          wrap.destroy();
+          const i = this.packets.indexOf(wrap);
+          if (i > -1) this.packets.splice(i, 1);
+          if (done) done();
+        });
       },
     });
   }
 
-  nextStage() {
-    if (!this.powerOn) return;
+  arrived(stage) {
+    this.phase = "waiting";
+    this.setExplain(stage.explain, "teach");
+    if (stage.id === "run") {
+      this.time.delayedCall(this.autoPlay ? this.AUTO_PAUSE_MS : 900, () => {
+        if (this.powerOn) this.finish();
+      });
+      return;
+    }
+    if (this.autoPlay) {
+      this.setPrompt("Playing all steps  ·  P to stop");
+      this.time.delayedCall(this.AUTO_PAUSE_MS, () => {
+        if (this.autoPlay && this.powerOn && !this.completed) this.playStage();
+      });
+    } else {
+      this.setPrompt("Read the step, then N / Enter / Space  ·  A  play the rest");
+    }
+  }
+
+  playStage() {
+    if (!this.powerOn || this.completed || this.phase === "moving") return;
     this.stageIndex += 1;
     const stage = this.STAGES[this.stageIndex];
-    if (!stage) return;
+    if (!stage) {
+      this.finish();
+      return;
+    }
+    this.phase = "moving";
     this.markStage(this.stageIndex);
-    this.objective.setColor("#eceef2");
-    this.objective.setText(stage.title + " — " + stage.note);
-
-    const after = (fn) => this.time.delayedCall(280, fn);
+    this.setExplain("Watch the box: " + stage.title, "wait");
+    this.setPrompt("Moving…");
 
     if (stage.id === "rails") {
       this.pulse(this.partPsu.flash);
       this.railText.setText("12V  on\n 5V  on\n3.3V on").setColor("#8fd4a8");
-      this.send("12V", this.psu, this.cpu, 0x4a9a94, () => after(() => this.nextStage()));
+      this.send("power", this.psu, this.cpu, 0x4a9a94, () => this.arrived(stage));
     } else if (stage.id === "reset") {
       this.pulse(this.partCpu.flash);
       this.cpuState.setText("reset").setColor("#c4a574");
-      after(() => this.nextStage());
+      this.send("RESET", this.psu, this.cpu, 0xc4a574, () => this.arrived(stage));
     } else if (stage.id === "firmware") {
       this.pulse(this.partRom.flash);
       this.send("UEFI", this.rom, this.cpu, 0xc4a574, () => {
         this.cpuState.setText("firmware").setColor("#7dfff0");
-        after(() => this.nextStage());
+        this.arrived(stage);
       });
     } else if (stage.id === "post") {
       this.pulse(this.partRam.flash);
       this.dimms.forEach((d, i) => {
-        this.time.delayedCall(i * 180, () => {
+        this.time.delayedCall(400 + i * 350, () => {
           d.bar.setFillStyle(0x16332f);
           d.lab.setColor("#8fd4a8");
         });
       });
-      this.send("POST", this.cpu, this.ram, 0x4a9a94, () => after(() => this.nextStage()));
+      this.send("POST", this.cpu, this.ram, 0x4a9a94, () => this.arrived(stage));
     } else if (stage.id === "disk") {
       this.pulse(this.partDisk.flash);
-      this.send("boot?", this.cpu, this.disk, 0xc4a574, () => after(() => this.nextStage()));
+      this.send("boot?", this.cpu, this.disk, 0xc4a574, () => this.arrived(stage));
     } else if (stage.id === "loader") {
-      this.send("LDR", this.disk, this.ram, 0x4a9a94, () => after(() => this.nextStage()));
+      this.send("LDR", this.disk, this.ram, 0x4a9a94, () => this.arrived(stage));
     } else if (stage.id === "kernel") {
       this.send("KERNEL", this.disk, this.ram, 0x8fd4a8, () => {
-        this.send("SHELL", this.disk, this.ram, 0xc4a574, () => after(() => this.nextStage()));
+        this.send("SHELL", this.disk, this.ram, 0xc4a574, () => this.arrived(stage));
       });
     } else if (stage.id === "run") {
       this.cpuState.setText("fetch RAM").setColor("#8fd4a8");
       this.pulse(this.partCpu.flash);
       this.send("RUN", this.ram, this.cpu, 0x8fd4a8, () => {
-        this.screen.setFillStyle(0xf4f1ea);
-        this.screenText.setText("desktop").setColor("#1a1d26");
-        this.pulse(this.partDisp.flash);
-        this.finish();
+        this.send("PICTURE", this.cpu, this.display, 0x8fd4a8, () => {
+          this.screen.setFillStyle(0xf4f1ea);
+          this.screenText.setText("desktop").setColor("#1a1d26");
+          this.pulse(this.partDisp.flash);
+          this.arrived(stage);
+        });
       });
     }
   }
 
   finish() {
-    this.booting = false;
+    if (this.completed) return;
+    this.phase = "done";
+    this.autoPlay = false;
     this.completed = true;
     this.checks.forEach((c) => {
       c.mark.setText("●").setColor("#8fd4a8");
       c.lab.setColor("#8fd4a8");
     });
-    this.objective.setColor("#8fd4a8");
-    this.objective.setText("The machine runs from RAM now. Press 5 to walk the boot from the inside.");
-    this.completeLabel = this.add.text(550, 686, "Level 04 complete  ·  Press 5  ·  Space to power off", this.mono(13, "#8fd4a8")).setOrigin(0.5);
+    this.setExplain("The machine now runs from RAM. Press 5 to walk this same boot from the inside, as the instruction pointer.", "ok");
+    this.setPrompt("5  inside the boot   ·   P  power off and replay");
+    this.completeLabel = this.add
+      .text(550, 692, "Level 04 complete  ·  Press 5", this.mono(13, "#8fd4a8"))
+      .setOrigin(0.5);
   }
 
   update() {
@@ -358,7 +479,7 @@ class Level_04_PC_Boot extends Phaser.Scene {
     if (this.moveKeys.left.isDown) this.hero.x -= speed;
     if (this.moveKeys.right.isDown) this.hero.x += speed;
     this.hero.x = Phaser.Math.Clamp(this.hero.x, 28, 1072);
-    this.hero.y = Phaser.Math.Clamp(this.hero.y, 110, 700);
+    this.hero.y = Phaser.Math.Clamp(this.hero.y, 120, 700);
     if (this.nearSwitch()) this.swHint.setColor("#c4a574");
     else this.swHint.setColor("#5c6170");
   }
