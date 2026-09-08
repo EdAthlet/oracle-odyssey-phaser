@@ -4,6 +4,11 @@ class Level_04_PC_Boot extends Phaser.Scene {
     create() {
         this.cameras.main.setBackgroundColor('#0a0f1f');
 
+        this.input.keyboard.on('keydown-ESC', () => {
+            if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
+            this.scene.start('MenuScene');
+        });
+
         const centerY = this.sys.game.config.height / 2;
         const pcCenterX = 360;   // PC positioned on the left
 
@@ -184,6 +189,10 @@ class Level_04_PC_Boot extends Phaser.Scene {
             }).setOrigin(0.5);
 
             this.input.keyboard.once('keydown-FIVE', () => this.scene.start('Level_04_1_BinaryThroughLogicGates'));
+            this.input.keyboard.once('keydown-SIX', () => {
+                if (window.odysseyGoInstance && window.odysseyGoInstance()) return;
+                this.scene.start('Level_06_TheInstance');
+            });
         });
     }
 
