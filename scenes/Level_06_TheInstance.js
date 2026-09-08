@@ -4,11 +4,34 @@ class Level_06_TheInstance extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor("#07080c");
+    this.W = 1600;
+    this.H = 1100;
     this.completed = false;
-    this.visited = {};
+    this.inside = null;
+    this.talkedDba = false;
+    this.seen = {};
 
-    this.keys = this.input.keyboard.addKeys({
+    this.C = {
+      bg: 0x07080c,
+      surface: 0x12141a,
+      border: 0x2a2e38,
+      teal: 0x4a9a94,
+    };
+
+    this.buildings = [
+      { id: "listener", title: "Listener", sub: "Oracle Net · 1521", x: 180, y: 430, w: 220, h: 150, explain: "Front gate. Port 1521. The Listener does not run SQL. It hands the connection to a server process, then waits again." },
+      { id: "instance", title: "The Instance", sub: "PGA · SGA · processes", x: 1180, y: 360, w: 280, h: 200, explain: "This hall is where SQL actually runs: dedicated server and PGA, then shared SGA — shared pool, buffer cache, redo buffer." },
+      { id: "storage", title: "Datafiles", sub: "Tablespaces", x: 160, y: 760, w: 230, h: 160, explain: "The cupboard. Tablespaces are files on disk. A cache miss walks here. RAM forgets; these files remember." },
+      { id: "redo", title: "Redo annex", sub: "Online logs · LGWR", x: 1180, y: 760, w: 230, h: 160, explain: "Every change is written as redo first. COMMIT waits for LGWR to flush the log buffer to these files — not for DBWn to write the table." },
+      { id: "standby", title: "Data Guard", sub: "Standby · redo apply", x: 660, y: 90, w: 260, h: 150, explain: "A live second site. Redo is shipped here and applied. Failover if the primary dies. This is not a backup tape." },
+      { id: "grid", title: "Grid Infrastructure", sub: "ASM · CRS · cluster", x: 520, y: 880, w: 230, h: 140, explain: "Grid starts the instance and mounts ASM disk groups. CRS is the watchdog. The database does not start itself." },
+      { id: "rman", title: "RMAN vault", sub: "Backup · recover", x: 860, y: 880, w: 230, h: 140, explain: "Copies of the past: datafiles and archived redo. Restore a file, recover to a time. History, not a standby." },
+    ];
+
+    this.cameras.main.setBackgroundColor(this.C.bg);
+    this.cameras.main.setBounds(0, 0, this.W, this.H);
+
+    this.moveKeys = this.input.keyboard.addKeys({
       up: "UP",
       down: "DOWN",
       left: "LEFT",
@@ -19,109 +42,181 @@ class Level_06_TheInstance extends Phaser.Scene {
       d: "D",
     });
 
-    this.add.text(36, 24, "Level 06 — The Instance", {
-      fontSize: "28px",
-      color: "#e8c96a",
-      fontStyle: "bold",
-    });
-    this.add.text(36, 62, "You are a SQL statement at port 1521. Walk the path a request takes.", {
-      fontSize: "16px",
-      color: "#9ab0c8",
-    });
+    this.drawGround();
+    this.drawPlaza();
+    this.drawBuildings();
+    this.drawHud();
+    this.drawHero();
+    this.cameras.main.startFollow(this.hero, true, 0.12, 0.12);
 
-    this.rooms = [
-      { id: "listener", label: "LISTENER", hint: "port 1521", x: 110, y: 400, w: 150, h: 220 },
-      { id: "cpu", label: "CPU / PGA", hint: "server process", x: 280, y: 360, w: 150, h: 220 },
-      { id: "sga", label: "SGA", hint: "shared pool", x: 450, y: 320, w: 150, h: 220 },
-      { id: "buffer", label: "BUFFER", hint: "cache", x: 620, y: 320, w: 150, h: 220 },
-      { id: "storage", label: "STORAGE", hint: "datafiles", x: 790, y: 380, w: 150, h: 220 },
-      { id: "redo", label: "REDO", hint: "LGWR", x: 960, y: 340, w: 150, h: 220 },
-    ];
+    this.input.keyboard.on("keydown", (e) => this.onKey(e));
+  }
 
-    const wires = this.add.graphics();
-    wires.lineStyle(2, 0x4a9a94, 0.5);
-    for (let i = 0; i < this.rooms.length - 1; i++) {
-      const a = this.rooms[i];
-      const b = this.rooms[i + 1];
-      wires.lineBetween(a.x + a.w / 2 - 12, a.y, b.x - b.w / 2 + 12, b.y);
-    }
+  font(size, color, extra) {
+    return Object.assign(
+      { fontFamily: "IBM Plex Sans, Segoe UI, sans-serif", fontSize: size + "px", color: color },
+      extra || {},
+    );
+  }
 
-    this.roomGfx = {};
-    for (const r of this.rooms) {
-      const box = this.add.rectangle(r.x, r.y, r.w, r.h, 0x12141a).setStrokeStyle(3, 0x2a2e38);
-      this.add.text(r.x, r.y - 18, r.label, { fontSize: "16px", color: "#eceef2", fontStyle: "bold" }).setOrigin(0.5);
-      this.add.text(r.x, r.y + 8, r.hint, { fontSize: "13px", color: "#8a8f9c" }).setOrigin(0.5);
-      this.roomGfx[r.id] = box;
-      this.visited[r.id] = false;
-    }
+  mono(size, color, extra) {
+    return Object.assign(
+      { fontFamily: "IBM Plex Mono, ui-monospace, monospace", fontSize: size + "px", color: color },
+      extra || {},
+    );
+  }
 
-    const body = this.add.circle(0, 0, 16, 0x4a9a94);
-    const tag = this.add.text(0, 0, "SESS", {
-      fontSize: "10px",
-      color: "#07080c",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
-    this.hero = this.add.container(this.rooms[0].x, this.rooms[0].y + 70, [body, tag]);
+  drawGround() {
+    const g = this.add.graphics();
+    g.lineStyle(1, 0x1a1d26, 0.9);
+    for (let x = 40; x < this.W; x += 40) g.lineBetween(x, 0, x, this.H);
+    for (let y = 40; y < this.H; y += 40) g.lineBetween(0, y, this.W, y);
+    g.lineStyle(2, 0x2d5e5a, 0.7);
+    g.beginPath();
+    g.moveTo(300, 500);
+    g.lineTo(800, 540);
+    g.lineTo(1180, 460);
+    g.moveTo(800, 540);
+    g.lineTo(800, 160);
+    g.moveTo(280, 840);
+    g.lineTo(800, 540);
+    g.lineTo(1290, 840);
+    g.moveTo(630, 950);
+    g.lineTo(980, 950);
+    g.strokePath();
+  }
 
-    this.status = this.add.text(36, 100, "Walk east. Light every room.", {
-      fontSize: "18px",
-      color: "#c5cdd8",
-    });
+  drawPlaza() {
+    this.add.ellipse(800, 540, 220, 120, 0x1a1d26).setStrokeStyle(2, 0x4a9a94);
+    this.add.text(800, 524, "ORACLE CAMPUS", this.mono(12, "#4a9a94")).setOrigin(0.5);
+    this.add.text(800, 544, "one database · many services", this.font(12, "#8a8f9c")).setOrigin(0.5);
+    this.dba = this.add.container(800, 580, [
+      this.add.circle(0, 6, 16, 0xc4a574),
+      this.add.text(0, 6, "DBA", this.mono(9, "#07080c")).setOrigin(0.5),
+    ]);
+    this.add.text(800, 610, "E  talk", this.mono(11, "#5c6170")).setOrigin(0.5);
+  }
 
-    this.packet = this.add.rectangle(this.rooms[0].x, this.rooms[0].y - 90, 14, 14, 0x7dfff0);
-    this.tweens.add({
-      targets: this.packet,
-      x: this.rooms[this.rooms.length - 1].x,
-      duration: 4200,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
-
-    this.input.keyboard.on("keydown", (e) => {
-      if (e.key === "Escape") {
-        if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
-        this.scene.start("MenuScene");
-        return;
-      }
-      if (this.completed && (e.key === "Enter" || e.key === "6")) {
-        if (window.odysseyGoInstance && window.odysseyGoInstance()) return;
-        this.status.setText("Level 06 complete. Esc returns to the menu.");
-      }
+  drawBuildings() {
+    this.bGfx = {};
+    this.buildings.forEach((b) => {
+      const box = this.add.rectangle(b.x + b.w / 2, b.y + b.h / 2, b.w, b.h, 0x12141a).setStrokeStyle(2, 0x4a9a94);
+      this.add.rectangle(b.x + b.w / 2, b.y + 5, b.w, 8, 0x2d5e5a);
+      this.add.text(b.x + b.w / 2, b.y + b.h / 2 - 10, b.title, this.font(16, "#eceef2")).setOrigin(0.5);
+      this.add.text(b.x + b.w / 2, b.y + b.h / 2 + 12, b.sub, this.mono(11, "#8a8f9c")).setOrigin(0.5);
+      this.add.text(b.x + b.w / 2, b.y + b.h - 18, "E  enter", this.mono(10, "#5c6170")).setOrigin(0.5);
+      this.bGfx[b.id] = box;
+      this.seen[b.id] = false;
     });
   }
 
-  mark(id) {
-    if (this.visited[id]) return;
-    this.visited[id] = true;
-    this.roomGfx[id].setFillStyle(0x16332f).setStrokeStyle(3, 0x44ddcc);
-    const n = Object.values(this.visited).filter(Boolean).length;
-    this.status.setText("Rooms lit " + n + "/6 — keep walking the SQL path.");
-    if (n >= 6 && !this.completed) {
-      this.completed = true;
-      this.status.setText("SELECT walked the instance. Press Enter, or Esc for the menu.");
-      this.add.text(36, 640, "Level 06 complete — Listener → CPU → SGA → Buffer → Storage → Redo", {
-        fontSize: "18px",
-        color: "#7dfff0",
-      });
+  drawHud() {
+    this.hudBg = this.add.rectangle(550, 44, 1100, 88, 0x07080c, 0.92).setScrollFactor(0);
+    this.add.text(36, 14, "LEVEL 06", this.mono(11, "#4a9a94")).setScrollFactor(0);
+    this.add
+      .text(36, 32, "Oracle Campus", {
+        fontFamily: "Newsreader, Times New Roman, serif",
+        fontSize: "24px",
+        color: "#eceef2",
+      })
+      .setScrollFactor(0);
+    this.explain = this.add
+      .text(36, 62, "Talk to the DBA in the plaza. Then walk into a building and press E.", this.font(14, "#8a8f9c"))
+      .setScrollFactor(0);
+    this.explain.setWordWrapWidth(820);
+    this.prompt = this.add
+      .text(36, 690, "Arrows / WASD walk   ·   E enter or talk   ·   Esc menu", this.mono(12, "#5c6170"))
+      .setScrollFactor(0);
+    this.add.text(1064, 18, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0).setScrollFactor(0);
+  }
+
+  drawHero() {
+    const body = this.add.circle(0, 6, 16, 0x4a9a94);
+    const visor = this.add.rectangle(0, -10, 22, 8, 0xc4a574);
+    const tag = this.add.text(0, 6, "YOU", this.mono(9, "#07080c")).setOrigin(0.5);
+    this.hero = this.add.container(800, 640, [body, visor, tag]);
+  }
+
+  onBuilding() {
+    const x = this.hero.x;
+    const y = this.hero.y;
+    return this.buildings.find((b) => x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) || null;
+  }
+
+  nearDba() {
+    return Phaser.Math.Distance.Between(this.hero.x, this.hero.y, 800, 580) < 56;
+  }
+
+  onKey(e) {
+    if (e.key === "Escape") {
+      if (this.inside) {
+        this.leaveBuilding();
+        return;
+      }
+      if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
+      this.scene.start("MenuScene");
+      return;
     }
+    if (this.completed && (e.key === "m" || e.key === "M")) {
+      if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
+      this.scene.start("MenuScene");
+      return;
+    }
+    if (e.key !== "e" && e.key !== "E" && e.key !== "Enter") return;
+    if (this.inside) {
+      this.leaveBuilding();
+      return;
+    }
+    if (this.nearDba()) {
+      this.talkedDba = true;
+      this.explain.setColor("#eceef2");
+      this.explain.setText(
+        "Each building is a service. SQL runs only in the Instance. Listener is the gate. Grid starts the machine. Data Guard is a live second site. RMAN is history.",
+      );
+      return;
+    }
+    const b = this.onBuilding();
+    if (b) this.enterBuilding(b);
+  }
+
+  enterBuilding(b) {
+    this.inside = b.id;
+    this.seen[b.id] = true;
+    this.bGfx[b.id].setStrokeStyle(2, 0x8fd4a8);
+    this.explain.setColor("#eceef2");
+    this.explain.setText(b.title + " — " + b.explain + "  (E to return to the yard)");
+    this.cameras.main.flash(180, 7, 8, 12);
+    this.checkComplete();
+  }
+
+  leaveBuilding() {
+    this.inside = null;
+    const left = this.buildings.filter((b) => !this.seen[b.id]).length;
+    this.explain.setColor("#8a8f9c");
+    this.explain.setText(left ? "Yard. " + left + " building(s) still unvisited. Walk onto a hall and press E." : "Campus mapped.");
+  }
+
+  checkComplete() {
+    if (this.completed) return;
+    if (!this.talkedDba) return;
+    if (this.buildings.some((b) => !this.seen[b.id])) return;
+    this.completed = true;
+    this.explain.setColor("#8fd4a8");
+    this.explain.setText("Campus mapped. Listener, Instance, disk, redo, Grid, Guard, RMAN — one database, many buildings.");
+    this.prompt.setText("Level 06 complete  ·  Esc or M for menu");
   }
 
   update() {
-    const speed = 6;
-    if (this.keys.w.isDown || this.keys.up.isDown) this.hero.y -= speed;
-    if (this.keys.s.isDown || this.keys.down.isDown) this.hero.y += speed;
-    if (this.keys.a.isDown || this.keys.left.isDown) this.hero.x -= speed;
-    if (this.keys.d.isDown || this.keys.right.isDown) this.hero.x += speed;
-
-    this.hero.x = Phaser.Math.Clamp(this.hero.x, 24, 1076);
-    this.hero.y = Phaser.Math.Clamp(this.hero.y, 140, 700);
-
-    for (const r of this.rooms) {
-      if (Math.abs(this.hero.x - r.x) < r.w / 2 && Math.abs(this.hero.y - r.y) < r.h / 2) {
-        this.mark(r.id);
-      }
-    }
+    if (this.inside) return;
+    const speed = 5.4;
+    let dx = 0;
+    let dy = 0;
+    if (this.moveKeys.up.isDown || this.moveKeys.w.isDown) dy -= speed;
+    if (this.moveKeys.down.isDown || this.moveKeys.s.isDown) dy += speed;
+    if (this.moveKeys.left.isDown || this.moveKeys.a.isDown) dx -= speed;
+    if (this.moveKeys.right.isDown || this.moveKeys.d.isDown) dx += speed;
+    this.hero.x = Phaser.Math.Clamp(this.hero.x + dx, 50, this.W - 50);
+    this.hero.y = Phaser.Math.Clamp(this.hero.y + dy, 110, this.H - 40);
   }
 
   shutdown() {
