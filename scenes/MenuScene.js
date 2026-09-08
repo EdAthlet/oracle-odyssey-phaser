@@ -39,7 +39,7 @@ class MenuScene extends Phaser.Scene {
     const names = { 1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE", 6: "SIX" };
     const levels = [
       { n: "1", title: "Keyboard → CPU → Display", blurb: "Type a character. Watch the signal travel.", scene: "Level_01_KeyboardCPU" },
-      { n: "2", title: "Improved Keyboard & Monitor", blurb: "Same path, richer machine. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
+      { n: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
       { n: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII lookup in the open. Bits for J: 01001010.", scene: "Level_03_KeyPressToBinary" },
       { n: "4", title: "PC Boot: HD → RAM → OS", blurb: "Flip power. Watch the OS load into RAM.", scene: "Level_04_PC_Boot" },
       { n: "5", title: "Binary Through Logic Gates", blurb: "Stand on AND, OR, or NOT. Target 01001111.", scene: "Level_04_1_BinaryThroughLogicGates" },
