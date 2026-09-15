@@ -29,7 +29,7 @@ class MenuScene extends Phaser.Scene {
       color: "#eceef2",
     });
 
-    this.add.text(64, 172, "Six levels. A keystroke becomes bits. A machine boots.\nThen you walk inside an Oracle instance as the SQL itself.", {
+    this.add.text(64, 172, "Six levels. A keystroke becomes bits. A machine boots.\nThen you walk the Oracle architecture until the slide is complete.", {
       fontFamily: sans,
       fontSize: "15px",
       color: "#8a8f9c",
@@ -43,7 +43,7 @@ class MenuScene extends Phaser.Scene {
       { n: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
       { n: "4", title: "PC Boot", blurb: "Schematic: power rails, firmware, POST, disk, kernel into RAM.", scene: "Level_04_PC_Boot" },
       { n: "5", title: "Inside the boot", blurb: "You are the instruction pointer. Walk reset → UEFI → POST → kernel.", scene: "Level_04_1_BinaryThroughLogicGates" },
-      { n: "6", title: "Oracle Campus", blurb: "Buildings: Listener, Instance, storage, redo, Grid, Data Guard, RMAN.", scene: "Level_06_TheInstance", featured: true },
+      { n: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance", featured: true },
     ];
 
     levels.forEach((level, i) => {
