@@ -29,7 +29,7 @@ class MenuScene extends Phaser.Scene {
       color: "#eceef2",
     });
 
-    this.add.text(64, 172, "Six levels. A keystroke becomes bits. A machine boots.\nThen you walk the Oracle architecture until the slide is complete.", {
+    this.add.text(64, 168, "Each level adds one step. 02A is the first: the letter is stored in RAM\nbefore the monitor is allowed to show it.", {
       fontFamily: sans,
       fontSize: "15px",
       color: "#8a8f9c",
@@ -40,17 +40,18 @@ class MenuScene extends Phaser.Scene {
     const levels = [
       { n: "1", title: "Keyboard → CPU → Display", blurb: "Type a character. Watch the signal travel.", scene: "Level_01_KeyboardCPU" },
       { n: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
+      { n: "2A", hotkey: "A", title: "The letter stops in RAM", blurb: "Type SAVE. Screen updates only after the CPU writes a cell.", scene: "Level_02A_ThroughRAM", featured: true },
       { n: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
       { n: "4", title: "PC Boot", blurb: "Schematic: power rails, firmware, POST, disk, kernel into RAM.", scene: "Level_04_PC_Boot" },
       { n: "5", title: "Inside the boot", blurb: "You are the instruction pointer. Walk reset → UEFI → POST → kernel.", scene: "Level_04_1_BinaryThroughLogicGates" },
-      { n: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance", featured: true },
+      { n: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance" },
     ];
 
     levels.forEach((level, i) => {
-      this.createLevelButton(64, 236 + i * 68, names[level.n], level, sans, mono);
+      this.createLevelButton(48, 208 + i * 64, level.hotkey || names[level.n], level, sans, mono);
     });
 
-    this.add.text(64, 686, "Press 1–6 to start  ·  Esc in a level returns here", {
+    this.add.text(48, 688, "Press 1–6 or A   ·   Esc in a level returns here", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#5c6170",
@@ -65,34 +66,34 @@ class MenuScene extends Phaser.Scene {
   }
 
   createLevelButton(x, y, keyName, level, sans, mono) {
-    const w = 820;
-    const h = 58;
+    const w = 980;
+    const h = 52;
     const featured = !!level.featured;
     const box = this.add
       .rectangle(x + w / 2, y + h / 2, w, h, featured ? 0x16332f : 0x12141a)
       .setStrokeStyle(1, featured ? 0x4a9a94 : 0x2a2e38);
     box.setInteractive({ useHandCursor: true });
 
-    this.add.text(x + 18, y + 18, String(level.n).padStart(2, "0"), {
+    this.add.text(x + 16, y + 16, level.n.length > 2 ? level.n : String(level.n).padStart(2, "0"), {
       fontFamily: mono,
       fontSize: "18px",
       color: "#4a9a94",
     });
 
-    this.add.text(x + 70, y + 10, level.title, {
+    this.add.text(x + 78, y + 6, level.title, {
       fontFamily: sans,
       fontSize: "16px",
       color: "#eceef2",
     });
 
-    this.add.text(x + 70, y + 32, level.blurb, {
+    this.add.text(x + 78, y + 28, level.blurb, {
       fontFamily: sans,
       fontSize: "13px",
       color: "#8a8f9c",
     });
 
     if (featured) {
-      this.add.text(x + w - 72, y + 22, "NEW", {
+      this.add.text(x + w - 64, y + 18, "NEW", {
         fontFamily: mono,
         fontSize: "11px",
         color: "#c4a574",
@@ -109,8 +110,9 @@ class MenuScene extends Phaser.Scene {
     box.on("pointerover", () => box.setFillStyle(featured ? 0x1c4a44 : 0x1a1d26));
     box.on("pointerout", () => box.setFillStyle(featured ? 0x16332f : 0x12141a));
     box.on("pointerdown", start);
-    this.input.keyboard.on("keydown-" + level.n, start);
-    this.input.keyboard.on("keydown-" + keyName, start);
+    const hotkey = level.hotkey || level.n;
+    this.input.keyboard.on("keydown-" + hotkey, start);
+    if (keyName && keyName !== hotkey) this.input.keyboard.on("keydown-" + keyName, start);
   }
 
   shutdown() {

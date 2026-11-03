@@ -302,7 +302,7 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
 
     if (this.completed && (e.key === "Enter" || e.code === "Enter")) {
       if (this.nearKeyboard()) {
-        this.scene.start("Level_03_KeyPressToBinary");
+        this.scene.start("Level_02A_ThroughRAM");
       } else {
         this.objective.setColor("#c4a574");
         this.objective.setText("Walk onto the keyboard first, then press Enter.");
@@ -421,7 +421,7 @@ class Level_02_ImprovedKeyboard extends Phaser.Scene {
     this.completed = true;
     this.refreshMonitor();
     this.objective.setColor("#8fd4a8");
-    this.objective.setText("Scan codes became characters. Walk onto the keyboard and press Enter for Level 03.");
+    this.objective.setText("Scan codes became characters. Walk onto the keyboard and press Enter — next the letter stops in RAM.");
     this.kbZone.setStrokeStyle(2, 0x4a9a94);
   }
 
