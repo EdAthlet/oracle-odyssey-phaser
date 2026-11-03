@@ -44,6 +44,7 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
     this.mon = { x: 860, y: 250 };
 
     this.drawPath();
+    this.drawWireDoor();
     this.drawKeyboard();
     this.drawCpu();
     this.drawMonitor();
@@ -110,6 +111,45 @@ class Level_01_KeyboardCPU extends Phaser.Scene {
       cpu: this.add.circle(this.cpu.x, this.cpu.y + 92, 5, 0x2a2e38).setStrokeStyle(2, 0x4a9a94),
       mon: this.add.circle(this.mon.x - 110, this.mon.y + 20, 5, 0x2a2e38).setStrokeStyle(2, 0x4a9a94),
     };
+  }
+
+  drawWireDoor() {
+    const x1 = this.kb.x + 90;
+    const y1 = this.kb.y - 70;
+    const x2 = this.cpu.x - 70;
+    const y2 = this.cpu.y + 20;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const ang = Phaser.Math.RadToDeg(Math.atan2(y2 - y1, x2 - x1));
+    this.diving = false;
+    this.wireZone = this.add.rectangle(mx, my, 200, 32, 0xc4a574, 0.05).setAngle(ang).setInteractive({ useHandCursor: true });
+    this.wireHint = this.add.text(mx, my - 26, "hover the wire", this.mono(12, "#c4a574")).setOrigin(0.5);
+    this.wireZone.on("pointerover", () => {
+      this.wireZone.setFillStyle(0xc4a574, 0.28);
+      this.wireHint.setText("opening the wire");
+      this.wireTimer = this.time.delayedCall(380, () => this.diveWire());
+    });
+    this.wireZone.on("pointerout", () => {
+      if (this.wireTimer) this.wireTimer.remove(false);
+      if (!this.diving) {
+        this.wireZone.setFillStyle(0xc4a574, 0.05);
+        this.wireHint.setText("hover the wire");
+      }
+    });
+    this.wireZone.on("pointerdown", () => this.diveWire());
+  }
+
+  diveWire() {
+    if (this.diving) return;
+    this.diving = true;
+    if (this.wireTimer) this.wireTimer.remove(false);
+    const x1 = this.kb.x + 90;
+    const y1 = this.kb.y - 70;
+    const x2 = this.cpu.x - 70;
+    const y2 = this.cpu.y + 20;
+    const cover = this.add.rectangle((x1 + x2) / 2, (y1 + y2) / 2, 80, 36, 0xefe6d6).setStrokeStyle(2, 0xc4a574).setDepth(300);
+    this.tweens.add({ targets: cover, scaleX: 20, scaleY: 28, duration: 1600, ease: "Cubic.easeInOut" });
+    this.time.delayedCall(1600, () => this.scene.start("Level_01A_KeyboardController"));
   }
 
   panel(x, y, w, h) {

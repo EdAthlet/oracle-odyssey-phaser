@@ -1,6 +1,7 @@
 const SCENES = [
   MenuScene,
   Level_01_KeyboardCPU,
+  Level_01A_KeyboardController,
   Level_02_ImprovedKeyboard,
   Level_02A_ThroughRAM,
   Level_03_KeyPressToBinary,
