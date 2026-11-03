@@ -4,6 +4,7 @@ const SCENES = [
   Level_01A_KeyboardController,
   Level_01B_KeyboardDriver,
   Level_01C_InterruptController,
+  Level_01D_ScanCode,
   Level_02_ImprovedKeyboard,
   Level_02A_ThroughRAM,
   Level_03_KeyPressToBinary,

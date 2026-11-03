@@ -11,19 +11,19 @@ class MenuScene extends Phaser.Scene {
     const mono = "IBM Plex Mono, ui-monospace, monospace";
     const display = "Newsreader, Times New Roman, serif";
 
-    this.add.text(48, 18, "FROM BITS TO CLOUD", {
+    this.add.text(48, 12, "FROM BITS TO CLOUD", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#4a9a94",
     });
-    this.add.text(48, 36, "Oracle Odyssey", {
+    this.add.text(48, 28, "Oracle Odyssey", {
       fontFamily: display,
-      fontSize: "40px",
+      fontSize: "34px",
       color: "#eceef2",
     });
-    this.add.text(48, 84, "The highlighted row is the level you used last.", {
+    this.add.text(48, 68, "The highlighted row is the level you used last.", {
       fontFamily: sans,
-      fontSize: "15px",
+      fontSize: "14px",
       color: "#8a8f9c",
     });
 
@@ -33,6 +33,7 @@ class MenuScene extends Phaser.Scene {
       { n: "01A", hotkey: "Q", title: "The wire", blurb: "Keyboard, cable, controller. The interrupt rides the thin line to the CPU.", scene: "Level_01A_KeyboardController" },
       { n: "01B", hotkey: "W", title: "The CPU starts a program", blurb: "The interrupt reaches the keyboard driver sitting in RAM.", scene: "Level_01B_KeyboardDriver" },
       { n: "01C", hotkey: "E", title: "The interrupt controller", blurb: "It hears line 1 and tells the CPU a number. It does not speak to RAM.", scene: "Level_01C_InterruptController" },
+      { n: "01D", hotkey: "R", title: "The scan code sits", blurb: "Made in the keyboard. It waits in the keyboard controller. Only line 1 goes on.", scene: "Level_01D_ScanCode" },
       { n: "02", hotkey: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
       { n: "02A", hotkey: "A", title: "The letter stops in RAM", blurb: "Type SAVE. Screen updates only after the CPU writes a cell.", scene: "Level_02A_ThroughRAM" },
       { n: "03", hotkey: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
@@ -52,7 +53,7 @@ class MenuScene extends Phaser.Scene {
     this.levelCards = [];
     this.selectedLevel = savedIndex >= 0 ? savedIndex : 0;
     levels.forEach((level, i) => {
-      this.createLevelButton(48, 104 + i * 54, level.hotkey || names[level.n], level, sans, mono);
+      this.createLevelButton(48, 92 + i * 50, level.hotkey || names[level.n], level, sans, mono);
     });
     this.paintSelection();
 
@@ -62,7 +63,7 @@ class MenuScene extends Phaser.Scene {
       else if (e.key === "Enter" && this.levelCards[this.selectedLevel]) this.levelCards[this.selectedLevel].start();
     });
 
-    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6, Q, W, E, or A", {
+    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6, Q, W, E, R, or A", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#5c6170",
@@ -78,7 +79,7 @@ class MenuScene extends Phaser.Scene {
 
   createLevelButton(x, y, keyName, level, sans, mono) {
     const w = 980;
-    const h = 48;
+    const h = 44;
     const featured = !!level.featured;
     const box = this.add
       .rectangle(x + w / 2, y + h / 2, w, h, featured ? 0x16332f : 0x12141a)

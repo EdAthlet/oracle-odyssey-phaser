@@ -60,12 +60,14 @@ class Level_01C_InterruptController extends Phaser.Scene {
     this.add.rectangle(150, 400, 190, 130, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
     this.add.text(70, 360, "KEYBOARD\nCONTROLLER", this.mono(12, "#1c1915"));
     this.add.text(70, 408, "Holds the scan code.\nRaises one line.", this.font(13, "#6e675f"));
+    this.add.text(210, 448, "chip", this.mono(10, "#1d6b66")).setOrigin(1, 0.5);
 
     this.arrow(250, 310, 400, "line 1");
 
     this.add.rectangle(430, 400, 210, 160, 0xf6e6cf).setStrokeStyle(2, 0x8d5a1a);
     this.add.text(340, 348, "INTERRUPT\nCONTROLLER", this.mono(12, "#8d5a1a"));
     this.add.text(340, 400, "Hears the line.\nTells the CPU\na number.", this.font(13, "#1c1915"));
+    this.add.text(510, 462, "chip", this.mono(10, "#8d5a1a")).setOrigin(1, 0.5);
 
     this.arrow(540, 600, 400, "interrupt number");
 
@@ -73,11 +75,13 @@ class Level_01C_InterruptController extends Phaser.Scene {
     this.add.rectangle(710, 331, 190, 2, 0x1d6b66);
     this.add.text(630, 346, "CPU", this.mono(11, "#6e675f"));
     this.add.text(630, 372, "Uses the number\nas a row.", this.font(13, "#1c1915"));
+    this.add.text(780, 452, "chip", this.mono(10, "#6e675f")).setOrigin(1, 0.5);
 
     this.arrow(810, 860, 400, "read this row");
 
     this.add.rectangle(960, 400, 170, 200, 0xd5e3ee).setStrokeStyle(2, 0x7f93a8);
     this.add.text(890, 316, "RAM", this.mono(11, "#3e5870"));
+    this.add.text(1020, 478, "chip", this.mono(10, "#3e5870")).setOrigin(1, 0.5);
     this.add.rectangle(960, 400, 132, 90, 0xfffcf7).setStrokeStyle(1, 0x7f93a8);
     this.add.text(906, 368, "interrupt table", this.mono(11, "#3e5870"));
     this.add.text(906, 390, "row 1\ndriver address", this.font(13, "#1c1915"));
