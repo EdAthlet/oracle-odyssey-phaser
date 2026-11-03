@@ -6,6 +6,7 @@ class Level_01A_KeyboardController extends Phaser.Scene {
   create() {
     this.busy = false;
     this.leaving = false;
+    this.arrived = false;
     this.phrase = "I am a piece of hardware on the motherboard. Interrupt now!!!";
 
     this.cameras.main.setBackgroundColor("#efe6d6");

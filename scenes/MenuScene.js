@@ -11,46 +11,47 @@ class MenuScene extends Phaser.Scene {
     const mono = "IBM Plex Mono, ui-monospace, monospace";
     const display = "Newsreader, Times New Roman, serif";
 
-    this.add.text(64, 36, "FROM BITS TO CLOUD", {
+    this.add.text(48, 18, "FROM BITS TO CLOUD", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#4a9a94",
     });
-
-
-    this.add.text(64, 58, "Oracle", {
+    this.add.text(48, 36, "Oracle Odyssey", {
       fontFamily: display,
-      fontSize: "52px",
+      fontSize: "40px",
       color: "#eceef2",
     });
-    this.add.text(64, 108, "Odyssey", {
-      fontFamily: display,
-      fontSize: "52px",
-      color: "#eceef2",
-    });
-
-    this.add.text(64, 168, "Each level adds one step. 02A is the first: the letter is stored in RAM\nbefore the monitor is allowed to show it.", {
+    this.add.text(48, 84, "The highlighted row is the level you used last.", {
       fontFamily: sans,
       fontSize: "15px",
       color: "#8a8f9c",
-      lineSpacing: 6,
     });
 
     const names = { 1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE", 6: "SIX" };
     const levels = [
-      { n: "1", title: "Keyboard → CPU → Display", blurb: "Type a character. Watch the signal travel.", scene: "Level_01_KeyboardCPU" },
-      { n: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
-      { n: "2A", hotkey: "A", title: "The letter stops in RAM", blurb: "Type SAVE. Screen updates only after the CPU writes a cell.", scene: "Level_02A_ThroughRAM", featured: true },
-      { n: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
-      { n: "4", title: "PC Boot", blurb: "Schematic: power rails, firmware, POST, disk, kernel into RAM.", scene: "Level_04_PC_Boot" },
-      { n: "5", title: "Inside the boot", blurb: "You are the instruction pointer. Walk reset → UEFI → POST → kernel.", scene: "Level_04_1_BinaryThroughLogicGates" },
-      { n: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance" },
+      { n: "01", hotkey: "1", title: "Keyboard → CPU → Display", blurb: "Type a character. Watch the signal travel.", scene: "Level_01_KeyboardCPU" },
+      { n: "01A", hotkey: "Q", title: "The wire", blurb: "Keyboard, cable, controller. The interrupt rides the thin line to the CPU.", scene: "Level_01A_KeyboardController" },
+      { n: "01B", hotkey: "W", title: "The CPU starts a program", blurb: "The interrupt reaches the keyboard driver sitting in RAM.", scene: "Level_01B_KeyboardDriver" },
+      { n: "02", hotkey: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
+      { n: "02A", hotkey: "A", title: "The letter stops in RAM", blurb: "Type SAVE. Screen updates only after the CPU writes a cell.", scene: "Level_02A_ThroughRAM" },
+      { n: "03", hotkey: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
+      { n: "04", hotkey: "4", title: "PC Boot", blurb: "Schematic: power rails, firmware, POST, disk, kernel into RAM.", scene: "Level_04_PC_Boot" },
+      { n: "05", hotkey: "5", title: "Inside the boot", blurb: "You are the instruction pointer. Walk reset → UEFI → POST → kernel.", scene: "Level_04_1_BinaryThroughLogicGates" },
+      { n: "06", hotkey: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance" },
     ];
 
+    let saved = "";
+    try {
+      saved = localStorage.getItem("odyssey-last-scene") || "";
+    } catch (e) {
+      saved = "";
+    }
+    const savedIndex = levels.findIndex((level) => level.scene === saved);
+
     this.levelCards = [];
-    this.selectedLevel = 2;
+    this.selectedLevel = savedIndex >= 0 ? savedIndex : 0;
     levels.forEach((level, i) => {
-      this.createLevelButton(48, 208 + i * 64, level.hotkey || names[level.n], level, sans, mono);
+      this.createLevelButton(48, 112 + i * 58, level.hotkey || names[level.n], level, sans, mono);
     });
     this.paintSelection();
 
@@ -60,7 +61,7 @@ class MenuScene extends Phaser.Scene {
       else if (e.key === "Enter" && this.levelCards[this.selectedLevel]) this.levelCards[this.selectedLevel].start();
     });
 
-    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6 or A jump", {
+    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6, Q, W, or A", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#5c6170",
@@ -110,6 +111,9 @@ class MenuScene extends Phaser.Scene {
     }
 
     const start = () => {
+      try {
+        localStorage.setItem("odyssey-last-scene", level.scene);
+      } catch (e) {}
       if (level.scene === "Level_06_TheInstance" && window.odysseyGoInstance && window.odysseyGoInstance()) {
         return;
       }
@@ -123,8 +127,8 @@ class MenuScene extends Phaser.Scene {
       start();
     });
     this.levelCards.push({ box, start, featured, base: featured ? 0x16332f : 0x12141a });
-    const hotkey = level.hotkey || level.n;
-    this.input.keyboard.on("keydown-" + hotkey, start);
+    const hotkey = level.hotkey || (/^\d$/.test(level.n) ? level.n : "");
+    if (hotkey) this.input.keyboard.on("keydown-" + hotkey, start);
     if (keyName && keyName !== hotkey) this.input.keyboard.on("keydown-" + keyName, start);
   }
 

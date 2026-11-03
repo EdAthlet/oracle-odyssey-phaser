@@ -33,3 +33,15 @@ const config = {
 };
 
 window.odysseyGame = new Phaser.Game(config);
+
+window.odysseyGame.events.once("ready", () => {
+  window.odysseyGame.scene.scenes.forEach((scene) => {
+    scene.events.on("create", () => {
+      const key = scene.sys.settings.key;
+      if (!key || key === "MenuScene") return;
+      try {
+        localStorage.setItem("odyssey-last-scene", key);
+      } catch (e) {}
+    });
+  });
+});

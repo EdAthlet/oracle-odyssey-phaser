@@ -43,12 +43,15 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
   }
 
   drawCpu() {
-    this.add.rectangle(280, 380, 340, 280, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
-    this.add.rectangle(280, 241, 340, 2, 0x1d6b66);
-    this.add.text(130, 258, "CPU", this.mono(11, "#6e675f"));
-    this.add.text(130, 278, "Running the interrupt", this.font(18, "#1c1915"));
-    this.cpuLine = this.add.text(130, 330, "", this.font(16, "#8d2a1a"));
-    this.cpuLine.setWordWrapWidth(300);
+    this.add.rectangle(280, 400, 430, 430, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
+    this.add.text(86, 206, "MOTHERBOARD", this.mono(11, "#5c6b5e"));
+    this.add.rectangle(280, 400, 300, 230, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
+    this.add.rectangle(280, 286, 300, 2, 0x1d6b66);
+    this.add.text(146, 300, "CPU", this.mono(11, "#6e675f"));
+    this.cpuLine = this.add.text(146, 328, "", this.font(16, "#8d2a1a"));
+    this.cpuLine.setWordWrapWidth(260);
+    this.cpuOrder = this.add.text(146, 430, "", this.font(16, "#8d2a1a"));
+    this.cpuOrder.setWordWrapWidth(260);
   }
 
   drawRam() {
@@ -60,8 +63,8 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
     g.strokePath();
     this.add.text(490, 352, "order", this.mono(11, "#8d5a1a"));
 
-    this.add.rectangle(820, 390, 400, 360, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
-    this.add.text(640, 230, "RAM", this.mono(11, "#5c6b5e"));
+    this.add.rectangle(820, 390, 400, 360, 0xd5e3ee).setStrokeStyle(2, 0x7f93a8);
+    this.add.text(640, 230, "RAM", this.mono(11, "#3e5870"));
     this.driverBox = this.add.rectangle(820, 400, 280, 160, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
     this.add.text(700, 336, "KEYBOARD DRIVER", this.mono(12, "#1d6b66"));
     this.driverLine = this.add.text(700, 370, "", this.font(16, "#1c1915"));
@@ -90,11 +93,11 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
 
   cpuHears() {
     this.cpuLine.setText("I hear your order to interrupt! Interrupting!");
-    this.time.delayedCall(1600, () => this.sendOrder());
+    this.time.delayedCall(4200, () => this.sendOrder());
   }
 
   sendOrder() {
-    this.cpuLine.setText("Start keyboard driver!");
+    this.cpuOrder.setText("Start keyboard driver!");
     const token = this.add.text(360, 380, "Start keyboard driver!", this.font(15, "#8d2a1a")).setOrigin(0, 0.5).setDepth(20);
     this.tweens.add({
       targets: token,
