@@ -12,19 +12,22 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     this.completed = false;
     this.sawJ = false;
     this.cursorOn = true;
+    this.lifting = false;
+    this.targetLit = false;
     this.goal = "01001010";
 
     this.C = {
-      bg: 0x07080c,
-      surface: 0x12141a,
-      surface2: 0x1a1d26,
-      border: 0x2a2e38,
-      teal: 0x4a9a94,
-      tealBright: 0x7dfff0,
-      gold: 0xc4a574,
-      fg: 0xeceef2,
-      muted: 0x8a8f9c,
-      success: 0x8fd4a8,
+      bg: 0xf3efe6,
+      surface: 0xfffcf7,
+      surface2: 0xf7f4ee,
+      border: 0xd9d1c3,
+      teal: 0x1d6b66,
+      tealBright: 0x143f3c,
+      gold: 0x8d5a1a,
+      fg: 0x1c1915,
+      muted: 0x6e675f,
+      success: 0x1e6b45,
+      pale: 0xcfc6b8,
     };
 
     this.TABLE = [
@@ -98,14 +101,14 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
 
   drawGrid() {
     const g = this.add.graphics();
-    g.lineStyle(1, 0x1a1d26, 0.9);
+    g.lineStyle(1, 0xe4ddd0, 1);
     for (let x = 40; x < 1100; x += 40) g.lineBetween(x, 0, x, 720);
     for (let y = 40; y < 720; y += 40) g.lineBetween(0, y, 1100, y);
   }
 
   drawPath() {
     const g = this.add.graphics();
-    g.lineStyle(2, 0x2d5e5a, 0.85);
+    g.lineStyle(2, 0xc9ddd9, 1);
     g.beginPath();
     g.moveTo(this.kb.x, this.kb.y - 48);
     g.lineTo(this.cpu.x, this.cpu.y + 90);
@@ -118,117 +121,163 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
 
   panel(x, y, w, h) {
     this.add.rectangle(x, y, w, h, this.C.surface).setStrokeStyle(1, this.C.border);
-    this.add.rectangle(x, y - h / 2 + 1, w, 2, this.C.teal).setAlpha(0.5);
+    this.add.rectangle(x, y - h / 2 + 1, w, 2, this.C.teal).setAlpha(0.7);
   }
 
   drawRom() {
     this.panel(this.rom.x, this.rom.y, 280, 470);
-    this.add.text(this.rom.x - 118, this.rom.y - 220, "LOOKUP", this.mono(11, "#5c6170"));
-    this.add.text(this.rom.x - 118, this.rom.y - 202, "ASCII ROM", this.font(18, "#eceef2"));
-    this.add.text(this.rom.x - 118, this.rom.y - 176, "CHR   DEC  HEX   BINARY", this.mono(11, "#5c6170"));
+    this.add.text(this.rom.x - 118, this.rom.y - 220, "LOOKUP", this.mono(11, "#6e675f"));
+    this.add.text(this.rom.x - 118, this.rom.y - 202, "ASCII ROM", this.font(18, "#1c1915"));
+    this.add.text(this.rom.x - 118, this.rom.y - 176, "CHR   DEC  HEX   BINARY", this.mono(11, "#6e675f"));
 
     this.romRows = {};
     this.TABLE.forEach((row, i) => {
       const y = this.rom.y - 152 + i * 24;
       const dec = row.ch.charCodeAt(0).toString().padStart(3, " ");
       const hex = row.ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
-      const bg = this.add.rectangle(this.rom.x, y, 252, 22, row.target ? 0x16332f : 0x12141a, row.target ? 1 : 0);
-      if (row.target) bg.setStrokeStyle(1, 0xc4a574);
-      const color = row.target ? "#c4a574" : "#8a8f9c";
+      const bg = this.add.rectangle(this.rom.x, y, 252, 22, row.target ? 0xfff6e8 : 0xfffcf7, 1);
+      bg.setStrokeStyle(1, row.target ? 0xc4a574 : 0xe7e0d4);
+      const color = row.target ? "#8d5a1a" : "#6e675f";
       const label = this.add.text(this.rom.x - 118, y - 7, row.ch + "    " + dec + "  " + hex + "   " + row.bits, this.mono(12, color));
-      this.romRows[row.ch] = { bg, label, y, target: !!row.target };
+      this.romRows[row.ch] = { bg, label, y, target: !!row.target, bits: row.bits };
+      if (row.target) {
+        bg.setInteractive({ useHandCursor: true });
+        label.setInteractive({ useHandCursor: true });
+        bg.on("pointerdown", () => this.liftJ());
+        label.on("pointerdown", () => this.liftJ());
+        bg.on("pointerover", () => bg.setFillStyle(0xf3e2c4));
+        bg.on("pointerout", () => bg.setFillStyle(this.targetLit ? 0xe7f3f1 : 0xfff6e8));
+      }
     });
   }
 
   drawCpu() {
     this.panel(this.cpu.x, this.cpu.y, 300, 210);
-    this.add.text(this.cpu.x - 132, this.cpu.y - 90, "ENCODE", this.mono(11, "#5c6170"));
-    this.add.text(this.cpu.x - 132, this.cpu.y - 72, "CPU · 8-bit register", this.font(16, "#eceef2"));
-    this.add.text(this.cpu.x - 132, this.cpu.y - 48, "MSB →", this.mono(11, "#5c6170"));
+    this.add.text(this.cpu.x - 132, this.cpu.y - 90, "ENCODE", this.mono(11, "#6e675f"));
+    this.add.text(this.cpu.x - 132, this.cpu.y - 72, "CPU · 8-bit register", this.font(16, "#1c1915"));
+    this.add.text(this.cpu.x - 132, this.cpu.y - 48, "MSB →", this.mono(11, "#6e675f"));
 
     this.bitCells = [];
     for (let i = 0; i < 8; i++) {
       const x = this.cpu.x - 118 + i * 34;
-      const box = this.add.rectangle(x, this.cpu.y - 8, 28, 36, 0x1a1d26).setStrokeStyle(1, 0x2a2e38);
-      const bit = this.add.text(x, this.cpu.y - 8, "·", this.mono(16, "#5c6170")).setOrigin(0.5);
-      const idx = this.add.text(x, this.cpu.y + 22, String(7 - i), this.mono(9, "#5c6170")).setOrigin(0.5);
+      const box = this.add.rectangle(x, this.cpu.y - 8, 28, 36, 0xf7f4ee).setStrokeStyle(1, 0xd9d1c3);
+      const bit = this.add.text(x, this.cpu.y - 8, "·", this.mono(16, "#cfc6b8")).setOrigin(0.5);
+      const idx = this.add.text(x, this.cpu.y + 22, String(7 - i), this.mono(9, "#6e675f")).setOrigin(0.5);
       this.bitCells.push({ box, bit, idx });
     }
 
-    this.decodeText = this.add.text(this.cpu.x - 132, this.cpu.y + 48, "char —   dec —   hex —", this.mono(13, "#8a8f9c"));
-    this.cpuFlash = this.add.rectangle(this.cpu.x, this.cpu.y, 300, 210, 0x4a9a94, 0);
+    this.decodeText = this.add.text(this.cpu.x - 132, this.cpu.y + 48, "char —   dec —   hex —", this.mono(13, "#6e675f"));
+    this.cpuFlash = this.add.rectangle(this.cpu.x, this.cpu.y, 300, 210, 0x1d6b66, 0);
   }
 
   drawMonitor() {
     this.panel(this.mon.x, this.mon.y, 320, 280);
-    this.add.text(this.mon.x - 140, this.mon.y - 124, "DISPLAY", this.mono(11, "#5c6170"));
-    this.add.text(this.mon.x - 140, this.mon.y - 106, "After lookup", this.font(16, "#eceef2"));
-    this.add.rectangle(this.mon.x, this.mon.y + 18, 280, 188, 0xf4f1ea).setStrokeStyle(1, 0x2a2e38);
-    this.add.text(this.mon.x - 124, this.mon.y - 64, "You typed", {
-      fontFamily: "IBM Plex Sans, Segoe UI, sans-serif",
-      fontSize: "13px",
-      color: "#5c6170",
-    });
+    this.add.text(this.mon.x - 140, this.mon.y - 124, "DISPLAY", this.mono(11, "#6e675f"));
+    this.add.text(this.mon.x - 140, this.mon.y - 106, "After lookup", this.font(16, "#1c1915"));
+    this.add.rectangle(this.mon.x, this.mon.y + 18, 280, 188, 0xffffff).setStrokeStyle(1, 0xd9d1c3);
+    this.add.text(this.mon.x - 124, this.mon.y - 64, "You typed", this.font(13, "#6e675f"));
     this.monitorText = this.add.text(this.mon.x - 124, this.mon.y - 42, "", {
       fontFamily: "IBM Plex Mono, ui-monospace, monospace",
       fontSize: "18px",
-      color: "#1a1d26",
+      color: "#1c1915",
       fixedWidth: 248,
       lineSpacing: 6,
     });
-    this.monFlash = this.add.rectangle(this.mon.x, this.mon.y, 320, 280, 0x4a9a94, 0);
+    this.monFlash = this.add.rectangle(this.mon.x, this.mon.y, 320, 280, 0x1d6b66, 0);
   }
 
   drawKeys() {
     this.panel(this.kb.x, this.kb.y, 300, 88);
-    this.add.text(this.kb.x - 132, this.kb.y - 30, "INPUT  ·  type 0, 1, or a letter", this.mono(11, "#5c6170"));
+    this.add.text(this.kb.x - 132, this.kb.y - 30, "INPUT  ·  type 0, 1, or a letter", this.mono(11, "#6e675f"));
     const chips = ["0", "1", "J", "A–L"];
     chips.forEach((label, i) => {
       const x = this.kb.x - 90 + i * 62;
       const featured = label === "0" || label === "1" || label === "J";
-      this.add.rectangle(x, this.kb.y + 14, 52, 28, featured ? 0x16332f : 0x1a1d26).setStrokeStyle(1, featured ? 0x4a9a94 : 0x2a2e38);
-      this.add.text(x, this.kb.y + 14, label, this.mono(13, featured ? "#7dfff0" : "#8a8f9c")).setOrigin(0.5);
+      this.add.rectangle(x, this.kb.y + 14, 52, 28, featured ? 0xe7f3f1 : 0xf7f4ee).setStrokeStyle(1, featured ? 0x1d6b66 : 0xd9d1c3);
+      this.add.text(x, this.kb.y + 14, label, this.mono(13, featured ? "#1d6b66" : "#6e675f")).setOrigin(0.5);
     });
   }
 
   drawHero() {
-    const body = this.add.circle(0, 6, 16, 0x4a9a94);
+    const body = this.add.circle(0, 6, 16, 0x1d6b66);
     const visor = this.add.rectangle(0, -10, 22, 8, 0xc4a574);
-    const tag = this.add.text(0, 6, "YOU", this.mono(9, "#07080c")).setOrigin(0.5);
+    const tag = this.add.text(0, 6, "YOU", this.mono(9, "#fffcf7")).setOrigin(0.5);
     this.hero = this.add.container(90, 620, [body, visor, tag]);
   }
 
   drawHud() {
-    this.add.rectangle(550, 44, 1100, 88, 0x07080c, 0.92);
-    this.add.text(36, 16, "LEVEL 03", this.mono(11, "#4a9a94"));
+    this.add.rectangle(550, 44, 1100, 88, 0xfffcf7, 0.94);
+    this.add.text(36, 16, "LEVEL 03", this.mono(11, "#1d6b66"));
     this.add.text(36, 36, "Key → bits → character", {
       fontFamily: "Newsreader, Times New Roman, serif",
       fontSize: "24px",
-      color: "#eceef2",
+      color: "#1c1915",
     });
-    this.objective = this.add.text(
-      36,
-      68,
-      "Type a letter to encode it. J is 01001010 — prove it by typing those eight bits.",
-      this.font(14, "#8a8f9c"),
-    );
-    this.add.text(1064, 22, "Tab  map", this.mono(12, "#c4a574")).setOrigin(1, 0);
-    this.add.text(1064, 44, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0);
+    this.objective = this.add.text(36, 68, "Click the J row in the table. Watch it travel to the pale target.", this.font(14, "#6e675f"));
+    this.add.text(1064, 22, "Tab  map", this.mono(12, "#8d5a1a")).setOrigin(1, 0);
+    this.add.text(1064, 44, "Esc menu", this.mono(12, "#6e675f")).setOrigin(1, 0);
   }
 
   drawBitTrack() {
     this.track = [];
-    this.add.text(36, 108, "TARGET  J =", this.mono(12, "#5c6170"));
+    this.targetBar = this.add.rectangle(176, 114, 360, 32, 0xfffcf7, 0.4).setStrokeStyle(1, 0xe7e0d4);
+    this.targetLabel = this.add.text(36, 108, "TARGET  J =", this.mono(12, "#cfc6b8"));
     for (let i = 0; i < 8; i++) {
       const x = 160 + i * 28;
-      const box = this.add.rectangle(x, 114, 24, 24, 0x12141a).setStrokeStyle(1, 0x2a2e38);
-      const bit = this.add.text(x, 114, this.goal[i], this.mono(13, "#5c6170")).setOrigin(0.5);
+      const box = this.add.rectangle(x, 114, 24, 24, 0xfffcf7).setStrokeStyle(1, 0xe7e0d4);
+      const bit = this.add.text(x, 114, this.goal[i], this.mono(13, "#cfc6b8")).setOrigin(0.5);
       this.track.push({ box, bit });
     }
+    this.targetNote = this.add.text(36, 138, "", this.font(14, "#1d6b66"));
+  }
+
+  liftJ() {
+    if (this.lifting || this.targetLit) return;
+    this.lifting = true;
+    const row = this.romRows.J;
+    row.bg.setFillStyle(0xf3e2c4);
+    const token = this.add.container(this.rom.x + 28, row.y).setDepth(40);
+    const plate = this.add.rectangle(0, 0, 176, 28, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
+    const mark = this.add.text(-62, 0, "J", this.font(16, "#1c1915")).setOrigin(0.5);
+    const bits = this.add.text(18, 0, row.bits, this.mono(13, "#1d6b66")).setOrigin(0.5);
+    token.add([plate, mark, bits]);
+    const destX = 160 + 3.5 * 28;
+    this.tweens.add({
+      targets: token,
+      x: destX,
+      y: 114,
+      duration: 1400,
+      ease: "Cubic.easeInOut",
+      onComplete: () => {
+        token.destroy();
+        this.lightTarget();
+      },
+    });
+  }
+
+  lightTarget() {
+    this.targetLit = true;
+    this.lifting = false;
+    this.targetBar.setFillStyle(0xe7f3f1, 1);
+    this.targetBar.setStrokeStyle(2, 0x1d6b66);
+    this.targetLabel.setColor("#1d6b66");
+    this.track.forEach((slot) => {
+      slot.box.setFillStyle(0xd7efe9);
+      slot.box.setStrokeStyle(1, 0x1d6b66);
+      slot.bit.setColor("#143f3c");
+    });
+    const row = this.romRows.J;
+    row.bg.setFillStyle(0xe7f3f1);
+    row.bg.setStrokeStyle(1, 0x1d6b66);
+    row.label.setColor("#1d6b66");
+    this.targetNote.setText("J is 01001010. Type those eight bits to prove you read the row.");
+    this.objective.setColor("#1c1915");
+    this.objective.setText("The row has reached the target. Now type 01001010.");
+    this.sawJ = true;
   }
 
   pulse(rect) {
-    rect.setFillStyle(0x4a9a94, 0.2);
+    rect.setFillStyle(0x1d6b66, 0.12);
     this.tweens.add({ targets: rect, fillAlpha: 0, duration: 260, ease: "Sine.easeOut" });
   }
 
@@ -238,9 +287,9 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
       if (!cell) return;
       this.time.delayedCall(i * 45, () => {
         cell.bit.setText(b);
-        cell.bit.setColor(b === "1" ? "#7dfff0" : "#8a8f9c");
-        cell.box.setStrokeStyle(1, b === "1" ? 0x4a9a94 : 0x2a2e38);
-        cell.box.setFillStyle(b === "1" ? 0x16332f : 0x1a1d26);
+        cell.bit.setColor(b === "1" ? "#1d6b66" : "#6e675f");
+        cell.box.setStrokeStyle(1, b === "1" ? 0x1d6b66 : 0xd9d1c3);
+        cell.box.setFillStyle(b === "1" ? 0xe7f3f1 : 0xf7f4ee);
       });
     });
   }
@@ -248,20 +297,16 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
   highlightRom(ch) {
     Object.keys(this.romRows).forEach((key) => {
       const row = this.romRows[key];
-      if (row.target) {
-        row.bg.setFillStyle(0x16332f, 1);
-        row.label.setColor("#c4a574");
-        return;
-      }
+      if (row.target) return;
       const on = key === ch;
-      row.bg.setFillStyle(0x16332f, on ? 1 : 0);
-      row.label.setColor(on ? "#7dfff0" : "#8a8f9c");
+      row.bg.setFillStyle(on ? 0xe7f3f1 : 0xfffcf7);
+      row.label.setColor(on ? "#1d6b66" : "#6e675f");
     });
   }
 
   drawMapReturn() {
-    const chip = this.add.rectangle(900, 108, 160, 28, 0x16332f).setStrokeStyle(1, 0x4a9a94).setInteractive({ useHandCursor: true }).setDepth(20);
-    const label = this.add.text(900, 108, "←  the map", this.mono(12, "#c4a574")).setOrigin(0.5).setDepth(21);
+    const chip = this.add.rectangle(900, 108, 160, 28, 0xfffcf7).setStrokeStyle(1, 0x1d6b66).setInteractive({ useHandCursor: true }).setDepth(20);
+    const label = this.add.text(900, 108, "←  the map", this.mono(12, "#1d6b66")).setOrigin(0.5).setDepth(21);
     chip.on("pointerdown", () => this.returnToMap());
     label.setInteractive({ useHandCursor: true });
     label.on("pointerdown", () => this.returnToMap());
@@ -295,6 +340,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
   }
 
   refreshTrack() {
+    if (!this.targetLit) return;
     const digits = this.typedText.replace(/[^01]/g, "");
     let n = 0;
     for (let i = 0; i < this.goal.length; i++) {
@@ -302,9 +348,9 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     }
     this.track.forEach((slot, i) => {
       const on = i < n;
-      slot.box.setStrokeStyle(1, on ? 0x4a9a94 : 0x2a2e38);
-      slot.box.setFillStyle(on ? 0x16332f : 0x12141a);
-      slot.bit.setColor(on ? "#7dfff0" : "#5c6170");
+      slot.box.setStrokeStyle(1, on ? 0x1d6b66 : 0xd9d1c3);
+      slot.box.setFillStyle(on ? 0xb7e4da : 0xd7efe9);
+      slot.bit.setColor(on ? "#143f3c" : "#1d6b66");
     });
   }
 
@@ -340,8 +386,8 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
   sendPacket(char) {
     const bits = char.charCodeAt(0).toString(2).padStart(8, "0");
     const wrap = this.add.container(this.kb.x, this.kb.y - 20);
-    const body = this.add.rectangle(0, 0, 30, 22, this.C.teal);
-    const label = this.add.text(0, 0, char === " " ? "␣" : char, this.mono(12, "#07080c")).setOrigin(0.5);
+    const body = this.add.rectangle(0, 0, 30, 22, 0x1d6b66);
+    const label = this.add.text(0, 0, char === " " ? "␣" : char, this.mono(12, "#fffcf7")).setOrigin(0.5);
     wrap.add([body, label]);
     this.particles.push(wrap);
 
@@ -360,6 +406,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
         label.setText(bits);
         body.setSize(88, 22);
         body.setFillStyle(0xc4a574);
+        label.setColor("#1c1915");
         this.tweens.add({
           targets: wrap,
           x: this.rom.x + 40,
@@ -377,7 +424,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
               onComplete: () => {
                 this.land(char);
                 this.pulse(this.monFlash);
-                const pop = this.add.text(this.mon.x, this.mon.y - 20, char === " " ? "␣" : char, this.font(36, "#1a1d26")).setOrigin(0.5);
+                const pop = this.add.text(this.mon.x, this.mon.y - 20, char === " " ? "␣" : char, this.font(36, "#1c1915")).setOrigin(0.5);
                 this.tweens.add({
                   targets: pop,
                   y: this.mon.y - 70,
@@ -407,11 +454,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     this.refreshMonitor();
     this.refreshTrack();
 
-    if (char === "J" && !this.sawJ && !this.completed) {
-      this.sawJ = true;
-      this.objective.setColor("#c4a574");
-      this.objective.setText("J encoded as 01001010. Now type those bits on the keyboard: 0 1 0 0 1 0 1 0.");
-    }
+    if (char === "J" && !this.targetLit) this.liftJ();
 
     this.checkComplete();
   }
@@ -421,9 +464,9 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     if (!this.typedText.replace(/\n/g, "").includes(this.goal)) return;
     this.completed = true;
     this.refreshMonitor();
-    this.objective.setColor("#8fd4a8");
+    this.objective.setColor("#1e6b45");
     this.objective.setText("The bits were J all along. Press 4 for Level 04 — how those bits boot a machine.");
-    this.add.text(550, 686, "Level 03 complete  ·  Press 4", this.mono(14, "#8fd4a8")).setOrigin(0.5);
+    this.add.text(550, 686, "Level 03 complete  ·  Press 4", this.mono(14, "#1e6b45")).setOrigin(0.5);
   }
 
   update() {
@@ -435,12 +478,10 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     this.hero.x = Phaser.Math.Clamp(this.hero.x, 28, 1072);
     this.hero.y = Phaser.Math.Clamp(this.hero.y, 110, 700);
 
-    if (!this.tipShown && !this.completed && (this.time.now - this.startTime) / 1000 > 16) {
+    if (!this.tipShown && !this.completed && !this.targetLit && (this.time.now - this.startTime) / 1000 > 12) {
       this.tipShown = true;
-      if (!this.sawJ) {
-        this.objective.setColor("#c4a574");
-        this.objective.setText("Tip: press J and watch the ROM row light. Then type 01001010 to prove the mapping.");
-      }
+      this.objective.setColor("#8d5a1a");
+      this.objective.setText("The gold J row is clickable. Send it up to the pale target.");
     }
   }
 
