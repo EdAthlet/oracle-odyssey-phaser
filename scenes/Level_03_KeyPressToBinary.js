@@ -3,7 +3,7 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     super("Level_03_KeyPressToBinary");
   }
 
-  create() {
+  create(data) {
     this.typedText = "";
     this.currentLineLength = 0;
     this.particles = [];
@@ -78,6 +78,8 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     });
 
     this.input.keyboard.on("keydown", (e) => this.onKey(e));
+    this.drawMapReturn();
+    if (data && data.fromMap) this.revealFromMap();
   }
 
   font(size, color, extra) {
@@ -210,8 +212,8 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
       "Type a letter to encode it. J is 01001010 — prove it by typing those eight bits.",
       this.font(14, "#8a8f9c"),
     );
-    this.add.text(1064, 22, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0);
-    this.add.text(1064, 44, "Arrows walk", this.mono(12, "#5c6170")).setOrigin(1, 0);
+    this.add.text(1064, 22, "Tab  map", this.mono(12, "#c4a574")).setOrigin(1, 0);
+    this.add.text(1064, 44, "Esc menu", this.mono(12, "#5c6170")).setOrigin(1, 0);
   }
 
   drawBitTrack() {
@@ -257,6 +259,36 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
     });
   }
 
+  drawMapReturn() {
+    const chip = this.add.rectangle(900, 108, 160, 28, 0x16332f).setStrokeStyle(1, 0x4a9a94).setInteractive({ useHandCursor: true }).setDepth(20);
+    const label = this.add.text(900, 108, "←  the map", this.mono(12, "#c4a574")).setOrigin(0.5).setDepth(21);
+    chip.on("pointerdown", () => this.returnToMap());
+    label.setInteractive({ useHandCursor: true });
+    label.on("pointerdown", () => this.returnToMap());
+    this.mapChip = chip;
+  }
+
+  revealFromMap() {
+    const cover = this.add.rectangle(550, 360, 1200, 800, 0x16332f).setDepth(400);
+    this.tweens.add({
+      targets: cover,
+      scaleX: 0.02,
+      scaleY: 0.02,
+      alpha: 0,
+      duration: 1100,
+      ease: "Cubic.easeInOut",
+      onComplete: () => cover.destroy(),
+    });
+  }
+
+  returnToMap() {
+    if (this.leaving) return;
+    this.leaving = true;
+    const cover = this.add.rectangle(550, 360, 40, 40, 0x16332f).setStrokeStyle(3, 0xc4a574).setDepth(400);
+    this.tweens.add({ targets: cover, scaleX: 40, scaleY: 28, duration: 1600, ease: "Cubic.easeInOut" });
+    this.time.delayedCall(1600, () => this.scene.start("Level_02A_ThroughRAM"));
+  }
+
   refreshMonitor() {
     const cursor = !this.completed && this.cursorOn ? "▌" : "";
     this.monitorText.setText(this.typedText + cursor);
@@ -277,6 +309,11 @@ class Level_03_KeyPressToBinary extends Phaser.Scene {
   }
 
   onKey(e) {
+    if (e.key === "Tab") {
+      this.returnToMap();
+      return;
+    }
+
     if (e.key === "Escape") {
       if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
       this.scene.start("MenuScene");

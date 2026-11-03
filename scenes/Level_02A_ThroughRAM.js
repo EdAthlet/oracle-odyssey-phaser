@@ -11,6 +11,7 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     this.completed = false;
     this.cursorOn = true;
     this.shiftHeld = false;
+    this.diving = false;
 
     this.C = {
       bg: 0x07080c,
@@ -132,7 +133,14 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
 
     this.add.rectangle(this.stops.mon.x, this.stops.mon.y + 18, 148, 72, 0x0b0d12).setStrokeStyle(1, 0x2a2e38);
     this.monitorText = this.add.text(this.stops.mon.x - 64, this.stops.mon.y + 4, "", this.mono(20, "#8fd4a8"));
-    this.monZone = this.add.rectangle(this.stops.mon.x, this.stops.mon.y, 180, 150, 0x4a9a94, 0);
+    this.cpuDoor = this.add.text(this.stops.cpu.x, this.stops.cpu.y + 58, "click · ASCII map", this.mono(11, "#c4a574")).setOrigin(0.5);
+    this.stages.cpu.box.setInteractive({ useHandCursor: true });
+    this.stages.cpu.box.on("pointerover", () => this.stages.cpu.box.setStrokeStyle(2, 0xc4a574));
+    this.stages.cpu.box.on("pointerout", () => {
+      if (!this.diving) this.stages.cpu.box.setStrokeStyle(1, 0x2a2e38);
+    });
+    this.stages.cpu.box.on("pointerdown", () => this.diveAscii());
+    this.add.text(this.stops.ram.x, this.stops.ram.y + 62, "later", this.mono(10, "#5c6170")).setOrigin(0.5);
   }
 
   drawRamCells() {
@@ -197,11 +205,11 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     this.objective = this.add.text(
       36,
       58,
-      "Same path as Level 02, plus one stop. Type S, then A, then V, then E. The screen changes only after RAM.",
+      "Arrows walk the map. The CPU box hides the ASCII table — click it. Letters pause at each box.",
       this.font(14, "#8a8f9c"),
     );
     this.objective.setWordWrapWidth(780);
-    this.hint = this.add.text(36, 688, "Arrows walk, slower   ·   one packet at a time   ·   Esc menu", this.mono(12, "#5c6170"));
+    this.hint = this.add.text(36, 688, "Arrows walk   ·   click the CPU box   ·   Esc menu", this.mono(12, "#5c6170"));
     this.progress = this.add.text(1064, 18, "S A V E", this.mono(13, "#5c6170")).setOrigin(1, 0);
   }
 
@@ -256,7 +264,7 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
   }
 
   onKeyDown(e) {
-    if (e.repeat) return;
+    if (e.repeat || this.diving) return;
     if (e.key === "Escape") {
       if (window.odysseyGoMenu && window.odysseyGoMenu()) return;
       this.scene.start("MenuScene");
@@ -268,14 +276,7 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     }
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab", "Control", "Alt", "Meta"].includes(e.key)) return;
 
-    if (this.completed && (e.key === "Enter" || e.code === "Enter")) {
-      if (this.nearMonitor()) this.scene.start("Level_03_KeyPressToBinary");
-      else {
-        this.objective.setColor("#c4a574");
-        this.objective.setText("Walk up to the monitor, then press Enter for Level 03.");
-      }
-      return;
-    }
+    if (this.completed && (e.key === "Enter" || e.code === "Enter")) return;
     if (this.completed) return;
 
     if (e.key === "Backspace") {
@@ -342,32 +343,34 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     this.dimStages();
     this.setStage("key", 1);
 
-    const hop = 720;
+    const hop = 1500;
+    const hold = 480;
+    const next = (fn) => this.time.delayedCall(hold, fn);
     this.hop(wrap, this.stops.scan.x, this.stops.scan.y + 28, hop, () => {
       this.scanText.setText("0x" + scan);
       label.setText(scan);
       body.setFillStyle(0xc4a574);
       this.setStage("scan", 1);
-      this.hop(wrap, this.stops.cpu.x, this.stops.cpu.y + 28, hop, () => {
+      next(() => this.hop(wrap, this.stops.cpu.x, this.stops.cpu.y + 28, hop, () => {
         this.cpuChar.setText(job.char);
         label.setText(job.char);
         body.setFillStyle(0x8fd4a8);
         this.setStage("cpu", 1);
         const addr = job.kind === "backspace" ? Math.max(0, this.stored.length - 1) : this.stored.length;
-        this.hop(wrap, this.stops.ram.x, this.stops.ram.y + 36, hop, () => {
+        next(() => this.hop(wrap, this.stops.ram.x, this.stops.ram.y + 36, hop, () => {
           label.setText(job.kind === "backspace" ? "⌫" : String(addr).padStart(2, "0"));
           body.setFillStyle(0xc4a574);
           this.addrText.setText("addr " + String(addr).padStart(2, "0"));
           this.setStage("ram", 1);
           const kept = this.commitRam(job);
-          this.hop(wrap, this.stops.mon.x, this.stops.mon.y + 16, hop, () => {
+          next(() => this.hop(wrap, this.stops.mon.x, this.stops.mon.y + 16, hop, () => {
             this.setStage("mon", 1);
             if (kept) this.refreshMonitor();
             wrap.destroy();
             done();
-          });
-        });
-      });
+          }));
+        }));
+      }));
     });
   }
 
@@ -396,14 +399,31 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     if (this.stored === this.WORD) {
       this.completed = true;
       this.objective.setColor("#8fd4a8");
-      this.objective.setText("SAVE is in RAM, then read back to the monitor. Walk to the monitor and press Enter.");
-      this.monZone.setStrokeStyle(2, 0x4a9a94);
-      this.hint.setText("Level 02A complete   ·   stand on the monitor   ·   Enter continues");
+      this.objective.setText("SAVE is stored. The character was decided in the CPU. Click that box to open the ASCII table.");
+      this.cpuDoor.setText("click · open ASCII");
+      this.stages.cpu.box.setStrokeStyle(2, 0xc4a574);
+      this.hint.setText("Click the CPU box   ·   it grows into Level 03");
     } else {
       this.objective.setColor("#eceef2");
       this.objective.setText(job.char + " is in cell 0" + (this.stored.length - 1) + ". The monitor copied it from RAM. Next: " + this.expected() + ".");
     }
     return true;
+  }
+
+  diveAscii() {
+    if (this.diving) return;
+    this.diving = true;
+    this.objective.setColor("#eceef2");
+    this.objective.setText("Opening the map inside the CPU. Scan code becomes a character here.");
+    const cover = this.add.rectangle(this.stops.cpu.x, this.stops.cpu.y, 156, 156, 0x16332f).setStrokeStyle(3, 0xc4a574).setDepth(300);
+    const word = this.add.text(this.stops.cpu.x, this.stops.cpu.y, "ASCII", {
+      fontFamily: "Newsreader, Times New Roman, serif",
+      fontSize: "28px",
+      color: "#eceef2",
+    }).setOrigin(0.5).setDepth(301);
+    this.tweens.add({ targets: cover, scaleX: 12, scaleY: 12, duration: 2000, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: word, scale: 2.6, alpha: 0.2, duration: 2000, ease: "Cubic.easeIn" });
+    this.time.delayedCall(2000, () => this.scene.start("Level_03_KeyPressToBinary", { fromMap: true }));
   }
 
   nearMonitor() {
@@ -419,8 +439,9 @@ class Level_02A_ThroughRAM extends Phaser.Scene {
     if (this.moveKeys.right.isDown) this.hero.x += speed;
     this.hero.x = Phaser.Math.Clamp(this.hero.x, 28, 1072);
     this.hero.y = Phaser.Math.Clamp(this.hero.y, 108, 700);
-    if (this.completed) {
-      this.monZone.setFillStyle(0x4a9a94, this.nearMonitor() ? 0.12 : 0);
+    if (!this.diving && this.stages.cpu) {
+      const pulse = 0.45 + Math.sin(this.time.now / 320) * 0.55;
+      this.cpuDoor.setAlpha(pulse);
     }
   }
 

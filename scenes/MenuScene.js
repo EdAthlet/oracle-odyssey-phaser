@@ -47,11 +47,20 @@ class MenuScene extends Phaser.Scene {
       { n: "6", title: "Database server architecture", blurb: "Walk the slide. Tasks light each box. D goes inside the Instance.", scene: "Level_06_TheInstance" },
     ];
 
+    this.levelCards = [];
+    this.selectedLevel = 2;
     levels.forEach((level, i) => {
       this.createLevelButton(48, 208 + i * 64, level.hotkey || names[level.n], level, sans, mono);
     });
+    this.paintSelection();
 
-    this.add.text(48, 688, "Press 1–6 or A   ·   Esc in a level returns here", {
+    this.input.keyboard.on("keydown", (e) => {
+      if (e.key === "ArrowDown") this.shiftLevel(1);
+      else if (e.key === "ArrowUp") this.shiftLevel(-1);
+      else if (e.key === "Enter" && this.levelCards[this.selectedLevel]) this.levelCards[this.selectedLevel].start();
+    });
+
+    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6 or A jump", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#5c6170",
@@ -108,11 +117,29 @@ class MenuScene extends Phaser.Scene {
     };
 
     box.on("pointerover", () => box.setFillStyle(featured ? 0x1c4a44 : 0x1a1d26));
-    box.on("pointerout", () => box.setFillStyle(featured ? 0x16332f : 0x12141a));
-    box.on("pointerdown", start);
+    box.on("pointerout", () => this.paintSelection());
+    box.on("pointerdown", () => {
+      this.selectedLevel = this.levelCards.findIndex((card) => card.box === box);
+      start();
+    });
+    this.levelCards.push({ box, start, featured, base: featured ? 0x16332f : 0x12141a });
     const hotkey = level.hotkey || level.n;
     this.input.keyboard.on("keydown-" + hotkey, start);
     if (keyName && keyName !== hotkey) this.input.keyboard.on("keydown-" + keyName, start);
+  }
+
+  shiftLevel(dir) {
+    const n = this.levelCards.length;
+    this.selectedLevel = (this.selectedLevel + dir + n) % n;
+    this.paintSelection();
+  }
+
+  paintSelection() {
+    this.levelCards.forEach((card, i) => {
+      const on = i === this.selectedLevel;
+      card.box.setFillStyle(on ? 0x1c3a36 : card.base);
+      card.box.setStrokeStyle(on ? 2 : 1, on ? 0xc4a574 : card.featured ? 0x4a9a94 : 0x2a2e38);
+    });
   }
 
   shutdown() {
