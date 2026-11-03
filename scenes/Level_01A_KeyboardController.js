@@ -19,6 +19,7 @@ class Level_01A_KeyboardController extends Phaser.Scene {
     this.drawDisplay();
     this.drawHud();
     this.drawBack();
+    this.drawMembers();
 
     this.input.keyboard.on("keydown", (e) => this.onKey(e));
   }
@@ -45,11 +46,11 @@ class Level_01A_KeyboardController extends Phaser.Scene {
   }
 
   drawBoard() {
-    this.add.rectangle(760, 390, 560, 460, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
-    this.add.text(500, 180, "MOTHERBOARD", this.mono(11, "#5c6b5e"));
-    this.add.circle(520, 210, 4, 0xc4b59a);
-    this.add.circle(980, 560, 4, 0xc4b59a);
-    this.add.circle(560, 560, 4, 0xc4b59a);
+    this.add.rectangle(740, 400, 700, 500, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
+    this.add.text(410, 168, "MOTHERBOARD", this.mono(11, "#5c6b5e"));
+    this.add.circle(430, 200, 4, 0xc4b59a);
+    this.add.circle(1040, 610, 4, 0xc4b59a);
+    this.add.circle(460, 610, 4, 0xc4b59a);
   }
 
   drawKeyboard() {
@@ -68,43 +69,43 @@ class Level_01A_KeyboardController extends Phaser.Scene {
     const g = this.add.graphics();
     g.lineStyle(8, 0x5c5348, 1);
     g.beginPath();
-    g.moveTo(250, 430);
-    g.lineTo(430, 400);
-    g.lineTo(560, 360);
+    g.moveTo(250, 450);
+    g.lineTo(400, 450);
+    g.lineTo(500, 430);
     g.strokePath();
-    this.add.text(300, 360, "cable", this.mono(11, "#6e675f"));
+    this.add.text(300, 428, "cable", this.mono(11, "#6e675f"));
   }
 
   drawController() {
-    this.chip = this.add.rectangle(640, 360, 150, 88, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
-    this.add.text(640, 338, "KEYBOARD\nCONTROLLER", this.mono(12, "#1c1915")).setOrigin(0.5).setAlign("center");
-    this.shout = this.add.text(640, 418, "", this.font(13, "#8d2a1a")).setOrigin(0.5);
+    this.chip = this.add.rectangle(600, 450, 150, 88, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
+    this.add.text(600, 428, "KEYBOARD\nCONTROLLER", this.mono(12, "#1c1915")).setOrigin(0.5).setAlign("center");
+    this.shout = this.add.text(600, 508, "", this.font(13, "#8d2a1a")).setOrigin(0.5);
     this.shout.setWordWrapWidth(220);
   }
 
   drawTrace() {
     this.route = [
-      { x: 730, y: 360 },
-      { x: 860, y: 360 },
-      { x: 940, y: 250 },
-      { x: 990, y: 156 },
+      { x: 720, y: 430 },
+      { x: 820, y: 340 },
+      { x: 920, y: 280 },
     ];
     const g = this.add.graphics();
     g.lineStyle(2, 0x8d5a1a, 1);
     g.beginPath();
-    g.moveTo(715, 360);
+    g.moveTo(675, 450);
     this.route.forEach((p) => g.lineTo(p.x, p.y));
     g.strokePath();
-    this.add.text(760, 338, "interrupt line", this.mono(11, "#8d5a1a"));
+    this.add.text(730, 400, "interrupt line", this.mono(11, "#8d5a1a"));
   }
 
   drawDisplay() {
-    this.add.rectangle(990, 168, 190, 150, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
-    this.add.text(908, 104, "CPU", this.mono(11, "#6e675f"));
-    this.screen = this.add.text(908, 124, "", this.font(13, "#1c1915"));
-    this.screen.setWordWrapWidth(164);
-    this.cpuBox = this.add.rectangle(990, 168, 190, 150, 0xfffcf7, 0);
-    this.cpuHint = this.add.text(990, 252, "", this.mono(12, "#8d5a1a")).setOrigin(0.5);
+    this.cpuAt = { x: 920, y: 280 };
+    this.add.rectangle(this.cpuAt.x, this.cpuAt.y, 180, 140, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
+    this.add.text(this.cpuAt.x - 74, this.cpuAt.y - 54, "CPU", this.mono(11, "#6e675f"));
+    this.screen = this.add.text(this.cpuAt.x - 74, this.cpuAt.y - 34, "", this.font(13, "#1c1915"));
+    this.screen.setWordWrapWidth(150);
+    this.cpuBox = this.add.rectangle(this.cpuAt.x, this.cpuAt.y, 180, 140, 0xfffcf7, 0);
+    this.cpuHint = this.add.text(this.cpuAt.x, this.cpuAt.y + 86, "", this.mono(12, "#8d5a1a")).setOrigin(0.5);
   }
 
   drawHud() {
@@ -132,6 +133,10 @@ class Level_01A_KeyboardController extends Phaser.Scene {
     label.on("pointerdown", () => this.back());
   }
 
+  drawMembers() {
+    this.add.text(550, 698, "keyboard   ·   cable   ·   motherboard   ·   keyboard controller   ·   interrupt line   ·   CPU", this.mono(11, "#6e675f")).setOrigin(0.5);
+  }
+
   onKey(e) {
     if (e.key === "Tab") {
       this.back();
@@ -153,8 +158,8 @@ class Level_01A_KeyboardController extends Phaser.Scene {
     const dot = this.add.circle(250, 430, 7, 0x1d6b66).setDepth(5);
     this.tweens.add({
       targets: dot,
-      x: 560,
-      y: 360,
+      x: 520,
+      y: 450,
       duration: 900,
       ease: "Sine.easeInOut",
       onComplete: () => {
@@ -174,7 +179,7 @@ class Level_01A_KeyboardController extends Phaser.Scene {
     const words = this.phrase.split(" ");
     const launch = (i) => {
       if (i >= words.length) return;
-      const token = this.add.text(640, 360, words[i], this.font(16, "#8d2a1a")).setOrigin(0.5).setDepth(30);
+      const token = this.add.text(600, 450, words[i], this.font(16, "#8d2a1a")).setOrigin(0.5).setDepth(30);
       this.follow(token, 0, () => {
         this.screen.setText((this.screen.text ? this.screen.text + " " : "") + words[i]);
         token.destroy();
@@ -214,8 +219,8 @@ class Level_01A_KeyboardController extends Phaser.Scene {
   openDriver() {
     if (!this.arrived || this.leaving) return;
     this.leaving = true;
-    const cover = this.add.rectangle(990, 168, 190, 150, 0xfffcf7).setStrokeStyle(2, 0x1d6b66).setDepth(400);
-    const word = this.add.text(990, 168, "CPU", this.font(22, "#1c1915")).setOrigin(0.5).setDepth(401);
+    const cover = this.add.rectangle(this.cpuAt.x, this.cpuAt.y, 180, 140, 0xfffcf7).setStrokeStyle(2, 0x1d6b66).setDepth(400);
+    const word = this.add.text(this.cpuAt.x, this.cpuAt.y, "CPU", this.font(22, "#1c1915")).setOrigin(0.5).setDepth(401);
     this.tweens.add({ targets: cover, scaleX: 8, scaleY: 8, duration: 1600, ease: "Cubic.easeInOut" });
     this.tweens.add({ targets: word, alpha: 0.15, scale: 2, duration: 1600 });
     this.time.delayedCall(1600, () => this.scene.start("Level_01B_KeyboardDriver"));

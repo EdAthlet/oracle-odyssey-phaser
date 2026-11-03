@@ -11,6 +11,7 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
     this.drawRam();
     this.drawHud();
     this.drawBack();
+    this.drawMembers();
     this.input.keyboard.on("keydown", (e) => {
       if (e.key === "Tab") this.back();
       else if (e.key === "Escape") {
@@ -43,32 +44,32 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
   }
 
   drawCpu() {
-    this.add.rectangle(280, 400, 430, 430, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
-    this.add.text(86, 206, "MOTHERBOARD", this.mono(11, "#5c6b5e"));
-    this.add.rectangle(280, 400, 300, 230, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
-    this.add.rectangle(280, 286, 300, 2, 0x1d6b66);
-    this.add.text(146, 300, "CPU", this.mono(11, "#6e675f"));
-    this.cpuLine = this.add.text(146, 328, "", this.font(16, "#8d2a1a"));
-    this.cpuLine.setWordWrapWidth(260);
-    this.cpuOrder = this.add.text(146, 430, "", this.font(16, "#8d2a1a"));
-    this.cpuOrder.setWordWrapWidth(260);
+    this.add.rectangle(560, 420, 1000, 470, 0xd7e0d2).setStrokeStyle(2, 0x8fa094);
+    this.add.text(80, 200, "MOTHERBOARD", this.mono(11, "#5c6b5e"));
+    this.add.rectangle(300, 430, 300, 250, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
+    this.add.rectangle(300, 306, 300, 2, 0x1d6b66);
+    this.add.text(166, 318, "CPU", this.mono(11, "#6e675f"));
+    this.cpuLine = this.add.text(166, 348, "", this.font(16, "#8d2a1a"));
+    this.cpuLine.setWordWrapWidth(250);
+    this.cpuOrder = this.add.text(166, 460, "", this.font(16, "#8d2a1a"));
+    this.cpuOrder.setWordWrapWidth(250);
   }
 
   drawRam() {
     const g = this.add.graphics();
     g.lineStyle(2, 0x8d5a1a, 1);
     g.beginPath();
-    g.moveTo(450, 380);
-    g.lineTo(620, 380);
+    g.moveTo(450, 430);
+    g.lineTo(610, 430);
     g.strokePath();
-    this.add.text(490, 352, "order", this.mono(11, "#8d5a1a"));
+    this.add.text(480, 404, "order", this.mono(11, "#8d5a1a"));
 
-    this.add.rectangle(820, 390, 400, 360, 0xd5e3ee).setStrokeStyle(2, 0x7f93a8);
-    this.add.text(640, 230, "RAM", this.mono(11, "#3e5870"));
-    this.driverBox = this.add.rectangle(820, 400, 280, 160, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
-    this.add.text(700, 336, "KEYBOARD DRIVER", this.mono(12, "#1d6b66"));
-    this.driverLine = this.add.text(700, 370, "", this.font(16, "#1c1915"));
-    this.driverLine.setWordWrapWidth(250);
+    this.add.rectangle(800, 430, 340, 260, 0xd5e3ee).setStrokeStyle(2, 0x7f93a8);
+    this.add.text(648, 318, "RAM", this.mono(11, "#3e5870"));
+    this.driverBox = this.add.rectangle(800, 450, 280, 150, 0xfffcf7).setStrokeStyle(2, 0x1d6b66);
+    this.add.text(676, 390, "KEYBOARD DRIVER", this.mono(12, "#1d6b66"));
+    this.driverLine = this.add.text(676, 418, "", this.font(16, "#1c1915"));
+    this.driverLine.setWordWrapWidth(248);
   }
 
   drawHud() {
@@ -91,6 +92,10 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
     label.on("pointerdown", () => this.back());
   }
 
+  drawMembers() {
+    this.add.text(550, 698, "motherboard   ·   CPU   ·   RAM   ·   keyboard driver", this.mono(11, "#6e675f")).setOrigin(0.5);
+  }
+
   cpuHears() {
     this.cpuLine.setText("I hear your order to interrupt! Interrupting!");
     this.time.delayedCall(4200, () => this.sendOrder());
@@ -98,11 +103,11 @@ class Level_01B_KeyboardDriver extends Phaser.Scene {
 
   sendOrder() {
     this.cpuOrder.setText("Start keyboard driver!");
-    const token = this.add.text(360, 380, "Start keyboard driver!", this.font(15, "#8d2a1a")).setOrigin(0, 0.5).setDepth(20);
+    const token = this.add.text(430, 430, "Start keyboard driver!", this.font(15, "#8d2a1a")).setOrigin(0, 0.5).setDepth(20);
     this.tweens.add({
       targets: token,
-      x: 700,
-      y: 400,
+      x: 676,
+      y: 450,
       duration: 1600,
       ease: "Sine.easeInOut",
       onComplete: () => {
