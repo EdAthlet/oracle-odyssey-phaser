@@ -99,14 +99,16 @@ class Level_01A_KeyboardController extends Phaser.Scene {
 
   drawDisplay() {
     this.add.rectangle(990, 168, 190, 150, 0xfffcf7).setStrokeStyle(1, 0xd9d1c3);
-    this.add.text(908, 104, "DISPLAY", this.mono(11, "#6e675f"));
+    this.add.text(908, 104, "CPU", this.mono(11, "#6e675f"));
     this.screen = this.add.text(908, 124, "", this.font(13, "#1c1915"));
     this.screen.setWordWrapWidth(164);
+    this.cpuBox = this.add.rectangle(990, 168, 190, 150, 0xfffcf7, 0);
+    this.cpuHint = this.add.text(990, 252, "", this.mono(12, "#8d5a1a")).setOrigin(0.5);
   }
 
   drawHud() {
     this.add.rectangle(550, 42, 1100, 84, 0xfffcf7, 0.94);
-    this.add.text(36, 14, "LEVEL 01  ·  THE WIRE", this.mono(11, "#1d6b66"));
+    this.add.text(36, 14, "LEVEL 01A", this.mono(11, "#1d6b66"));
     this.add.text(36, 32, "The controller shouts", {
       fontFamily: "Newsreader, Times New Roman, serif",
       fontSize: "24px",
@@ -144,7 +146,7 @@ class Level_01A_KeyboardController extends Phaser.Scene {
   }
 
   pressKey() {
-    if (this.busy || this.leaving) return;
+    if (this.busy || this.leaving || this.arrived) return;
     this.busy = true;
     this.tweens.add({ targets: this.keycap, y: 474, duration: 80, yoyo: true });
     const dot = this.add.circle(250, 430, 7, 0x1d6b66).setDepth(5);
@@ -176,8 +178,14 @@ class Level_01A_KeyboardController extends Phaser.Scene {
         this.screen.setText((this.screen.text ? this.screen.text + " " : "") + words[i]);
         token.destroy();
         if (i === words.length - 1) {
+          this.arrived = true;
+          this.cpuBox.setInteractive({ useHandCursor: true });
+          this.cpuBox.on("pointerdown", () => this.openDriver());
+          this.screen.setInteractive({ useHandCursor: true });
+          this.screen.on("pointerdown", () => this.openDriver());
+          this.cpuHint.setText("click the message");
           this.objective.setColor("#1c1915");
-          this.objective.setText("The shout was only a signal. The words rode the thin line off the board and onto the display.");
+          this.objective.setText("The shout reached the CPU. Click that message to see what the CPU does with an interrupt.");
           this.busy = false;
         }
       });
@@ -200,6 +208,16 @@ class Level_01A_KeyboardController extends Phaser.Scene {
       ease: "Sine.easeInOut",
       onComplete: () => this.follow(token, i + 1, done),
     });
+  }
+
+  openDriver() {
+    if (!this.arrived || this.leaving) return;
+    this.leaving = true;
+    const cover = this.add.rectangle(990, 168, 190, 150, 0xfffcf7).setStrokeStyle(2, 0x1d6b66).setDepth(400);
+    const word = this.add.text(990, 168, "CPU", this.font(22, "#1c1915")).setOrigin(0.5).setDepth(401);
+    this.tweens.add({ targets: cover, scaleX: 8, scaleY: 8, duration: 1600, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: word, alpha: 0.15, scale: 2, duration: 1600 });
+    this.time.delayedCall(1600, () => this.scene.start("Level_01B_KeyboardDriver"));
   }
 
   back() {
