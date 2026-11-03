@@ -32,6 +32,7 @@ class MenuScene extends Phaser.Scene {
       { n: "01", hotkey: "1", title: "Keyboard → CPU → Display", blurb: "Type a character. Watch the signal travel.", scene: "Level_01_KeyboardCPU" },
       { n: "01A", hotkey: "Q", title: "The wire", blurb: "Keyboard, cable, controller. The interrupt rides the thin line to the CPU.", scene: "Level_01A_KeyboardController" },
       { n: "01B", hotkey: "W", title: "The CPU starts a program", blurb: "The interrupt reaches the keyboard driver sitting in RAM.", scene: "Level_01B_KeyboardDriver" },
+      { n: "01C", hotkey: "E", title: "The interrupt controller", blurb: "It hears line 1 and tells the CPU a number. It does not speak to RAM.", scene: "Level_01C_InterruptController" },
       { n: "02", hotkey: "2", title: "Improved Keyboard & Monitor", blurb: "A real matrix. Packets start on the key you hit. Type BOOT!", scene: "Level_02_ImprovedKeyboard" },
       { n: "02A", hotkey: "A", title: "The letter stops in RAM", blurb: "Type SAVE. Screen updates only after the CPU writes a cell.", scene: "Level_02A_ThroughRAM" },
       { n: "03", hotkey: "3", title: "Key → Signal → Binary → Character", blurb: "ASCII in the open. Encode a letter, then type J as bits: 01001010.", scene: "Level_03_KeyPressToBinary" },
@@ -51,7 +52,7 @@ class MenuScene extends Phaser.Scene {
     this.levelCards = [];
     this.selectedLevel = savedIndex >= 0 ? savedIndex : 0;
     levels.forEach((level, i) => {
-      this.createLevelButton(48, 112 + i * 58, level.hotkey || names[level.n], level, sans, mono);
+      this.createLevelButton(48, 104 + i * 54, level.hotkey || names[level.n], level, sans, mono);
     });
     this.paintSelection();
 
@@ -61,7 +62,7 @@ class MenuScene extends Phaser.Scene {
       else if (e.key === "Enter" && this.levelCards[this.selectedLevel]) this.levelCards[this.selectedLevel].start();
     });
 
-    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6, Q, W, or A", {
+    this.add.text(48, 688, "Arrows move   ·   Enter opens   ·   1–6, Q, W, E, or A", {
       fontFamily: mono,
       fontSize: "12px",
       color: "#5c6170",
@@ -77,26 +78,26 @@ class MenuScene extends Phaser.Scene {
 
   createLevelButton(x, y, keyName, level, sans, mono) {
     const w = 980;
-    const h = 52;
+    const h = 48;
     const featured = !!level.featured;
     const box = this.add
       .rectangle(x + w / 2, y + h / 2, w, h, featured ? 0x16332f : 0x12141a)
       .setStrokeStyle(1, featured ? 0x4a9a94 : 0x2a2e38);
     box.setInteractive({ useHandCursor: true });
 
-    this.add.text(x + 16, y + 16, level.n.length > 2 ? level.n : String(level.n).padStart(2, "0"), {
+    this.add.text(x + 16, y + 14, level.n.length > 2 ? level.n : String(level.n).padStart(2, "0"), {
       fontFamily: mono,
       fontSize: "18px",
       color: "#4a9a94",
     });
 
-    this.add.text(x + 78, y + 6, level.title, {
+    this.add.text(x + 78, y + 4, level.title, {
       fontFamily: sans,
       fontSize: "16px",
       color: "#eceef2",
     });
 
-    this.add.text(x + 78, y + 28, level.blurb, {
+    this.add.text(x + 78, y + 24, level.blurb, {
       fontFamily: sans,
       fontSize: "13px",
       color: "#8a8f9c",
